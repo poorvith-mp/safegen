@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeGen — Secure Password Generator</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="loading" data-theme="light" data-accent="indigo">
+    <div id="pageLoader" class="page-loader" aria-hidden="true">
+      <div class="loader-card glass">
+        <img src="favicon.svg" alt="SafeGen logo" class="loader-logo" />
+        <p class="loader-kicker">Launching.....</p>
+        <h2>SafeGen</h2>
+        <p class="loader-text">Preparing a smoother, safer password experience...</p>
+        <div class="loader-bar"><span></span></div>
+      </div>
+    </div>
+
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
+    <div id="cursorDot" class="cursor-dot" aria-hidden="true"></div>
+    <div id="cursorRing" class="cursor-ring" aria-hidden="true"></div>
+
+    <header class="topbar glass">
+      <button class="brand brand-button" data-view-target="home" type="button" aria-label="Go to home">
+        <span class="brand-mark">
+          <img src="favicon.svg" alt="" class="brand-icon" />
+        </span>
+        <span>
+          <span class="brand-kicker">Secure password suite</span>
+          <span class="brand-title">SafeGen</span>
+        </span>
+      </button>
+
+      <div class="topbar-note">
+        <span class="status-dot"></span>
+        <span>Fast generation • Smooth controls • Clean customization</span>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section id="home" class="view active" aria-labelledby="home-title">
+        <div class="home-hero glass reveal">
+          <div class="hero-copy">
+            <span class="pill">Smart password studio</span>
+            <h2 id="home-title">Secure passwords, beautifully generated.</h2>
+            <p>
+              SafeGen blends strong password creation with elegant motion, smooth interactions,
+              quick copying, and polished personalization in one refined interface.
+            </p>
+
+            <div class="hero-actions">
+              <button id="jumpGeneratorBtn" class="primary-button" type="button">Generate now</button>
+              <button id="jumpSettingsBtn" class="ghost-button" type="button">Tune settings</button>
+            </div>
+
+            <div class="hero-trust">
+              <span>Crypto-backed randomness</span>
+              <span>Instant strength feedback</span>
+              <span>One-tap copy</span>
+            </div>
+          </div>
+
+          <div class="hero-visual">
+            <div class="hero-shield-card">
+              <img src="favicon.svg" alt="" class="hero-logo" />
+              <div>
+                <p class="section-kicker">SafeGen security pulse</p>
+                <h3>Built to feel fast, calm, and secure.</h3>
+              </div>
+            </div>
+
+            <div class="hero-stat-row">
+              <div class="stat-card glass">
+                <strong id="entropyValue">0 bits</strong>
+                <span>Entropy estimate</span>
+              </div>
+              <div class="stat-card glass">
+                <strong id="mixValue">4 / 4</strong>
+                <span>Character mix</span>
+              </div>
+            </div>
+
+            <div class="floating-card glass">
+              <strong id="currentLength">16</strong>
+              <span>Current length</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-grid">
+          <section id="generatorSection" class="card glass generator-card reveal reveal-delay-1" aria-labelledby="generator-title">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Home</p>
+                <h3 id="generator-title">Password Generator</h3>
+              </div>
+              <button id="surpriseBtn" class="ghost-button" type="button">Random</button>
+            </div>
+
+            <div class="output-panel">
+              <label class="field-label" for="password">Generated password</label>
+              <div class="output-row">
+                <input
+                  id="password"
+                  class="password-field"
+                  type="text"
+                  readonly
+                  value="Generating your first password..."
+                  aria-label="Generated password"
+                />
+                <button id="copyBtn" class="primary-outline-button" type="button">Copy to clipboard</button>
+              </div>
+            </div>
+
+            <div class="controls-grid">
+              <div class="card-block">
+                <div class="row between">
+                  <label for="length">Length</label>
+                  <strong id="lengthValue">16</strong>
+                </div>
+                <input id="length" class="slider" type="range" min="4" max="64" value="16" />
+              </div>
+
+              <div class="card-block options">
+                <label class="option-chip">
+                  <input id="uppercase" type="checkbox" checked />
+                  <span>Uppercase</span>
+                </label>
+                <label class="option-chip">
+                  <input id="lowercase" type="checkbox" checked />
+                  <span>Lowercase</span>
+                </label>
+                <label class="option-chip">
+                  <input id="numbers" type="checkbox" checked />
+                  <span>Numbers</span>
+                </label>
+                <label class="option-chip">
+                  <input id="symbols" type="checkbox" checked />
+                  <span>Symbols</span>
+                </label>
+              </div>
+
+              <div class="card-block strength-card">
+                <div class="row between">
+                  <span>Strength</span>
+                  <strong id="strengthText">Strong</strong>
+                </div>
+                <div class="strength-meter" aria-hidden="true">
+                  <div id="strengthFill" class="strength-fill strong"></div>
+                </div>
+                <p id="message" class="helper-text" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <div class="action-row">
+              <button id="generateBtn" class="primary-button" type="button">Generate Password</button>
+              <button id="refreshBtn" class="ghost-button" type="button">Refresh</button>
+            </div>
+          </section>
+
+          <aside class="side-stack reveal reveal-delay-2">
+            <section class="card glass info-card">
+              <div class="section-head compact">
+                <div>
+                  <p class="section-kicker">Why SafeGen</p>
+                  <h3>Thoughtfully designed for everyday use, who needs secure password but dont know how to create one.</h3>
+                </div>
+              </div>
+              <ul class="feature-list">
+                <li>Balanced layout with minimal visual noise.</li>
+                <li>Quick controls for a faster generate-copy flow.</li>
+                <li>Live customization without leaving the page.</li>
+                <li>Unlimited valid password generations</li>
+              </ul>
+            </section>
+
+            <section class="card glass snapshot-card">
+              <p class="section-kicker">Live snapshot</p>
+              <div class="snapshot-grid">
+                <div class="snapshot-item">
+                  <strong id="snapshotLength">16</strong>
+                  <span>Selected length</span>
+                </div>
+                <div class="snapshot-item">
+                  <strong id="snapshotTypes">4</strong>
+                  <span>Enabled types</span>
+                </div>
+                <div class="snapshot-item">
+                  <strong id="snapshotStrength">Strong</strong>
+                  <span>Current rating</span>
+                </div>
+                <div class="snapshot-item">
+                  <strong>1 click</strong>
+                  <span>Copy workflow</span>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="about" class="view" aria-labelledby="about-title">
+        <div class="section-banner glass reveal">
+          <span class="pill">About Us</span>
+          <h2 id="about-title">Editable profile, social links, and legal docs.</h2>
+          <p>
+            SafeGen includes polished mock content here so you can later replace it with your own
+            story, social platforms, company details, creator identity, and legal documentation.
+          </p>
+        </div>
+
+        <div class="about-grid">
+          <section class="card glass profile-card reveal reveal-delay-1">
+            <div class="profile-top">
+              <div class="avatar">Poorvith M P</div>
+              <div>
+                <h3>Poorvith M P</h3>
+                <p class="muted">Student • Developer • Designer</p>
+              </div>
+            </div>
+            <p>
+              Pre-college student developer and indie builder — I learn by shipping. I build
+              privacy-first tools and clean, fast interfaces in public — from my first live
+              tool (AiScrubber) to full-stack apps like EcoTrace. SafeGen is the latest build:
+              a password generator that runs entirely in your browser, nothing ever leaves the page.
+            </p>
+
+            <div class="stats-grid">
+              <div class="mini-stat">
+                <strong>10+</strong>
+                <span>Projects shipped</span>
+              </div>
+              <div class="mini-stat">
+                <strong>24/7</strong>
+                <span>Creative energy</span>
+              </div>
+              <div class="mini-stat">
+                <strong>∞</strong>
+                <span>Ideas in progress</span>
+              </div>
+            </div>
+
+            <div class="social-grid">
+              <a href="https://github.com/prvthmpcypher" target="_blank" rel="noopener noreferrer" class="social-link">GitHub</a>
+              <a href="https://linkedin.com/in/poorvithmp" target="_blank" rel="noopener noreferrer" class="social-link">LinkedIn</a>
+              <a href="https://x.com/poorvithmp07" target="_blank" rel="noopener noreferrer" class="social-link">X / Twitter</a>
+              <a href="https://instagram.com/prvthmp" target="_blank" rel="noopener noreferrer" class="social-link">Instagram</a>
+              <a href="https://facebook.com/prvthmp" target="_blank" rel="noopener noreferrer" class="social-link">Facebook</a>
+              <a href="https://buymeacoffee.com/prvthmp" target="_blank" rel="noopener noreferrer" class="social-link">Buy Me a Coffee</a>
+              <a href="https://poorvithmp.vercel.app" target="_blank" rel="noopener noreferrer" class="social-link">Portfolio</a>
+              <a href="/cdn-cgi/l/email-protection#5821372d183d20393528343d763b3735" class="social-link">Email</a>
+            </div>
+          </section>
+
+          <section class="card glass legal-card reveal reveal-delay-2">
+            <div class="section-head compact">
+              <div>
+                <p class="section-kicker">Legal center</p>
+                <h3>Documents</h3>
+              </div>
+            </div>
+
+            <details open>
+              <summary>Privacy Policy</summary>
+              <p>
+                SafeGen runs entirely in your browser. Passwords are generated locally using your
+                device, and nothing is ever sent to a server — there are no network requests in
+                this app. The only data stored is your display preference (theme, accent, and
+                default length) in your browser's localStorage, so settings persist between visits.
+                No analytics, no tracking, no third-party scripts. To clear stored preferences,
+                use the Settings panel or clear your browser's site data. For privacy questions,
+                reach out via the Email link above. Last updated: June 2026.
+              </p>
+            </details>
+
+            <details>
+              <summary>Terms & Conditions</summary>
+              <p>
+                SafeGen is provided as-is, free to use, with no warranty of any kind. You are
+                responsible for how you store, share, and use any password generated here — treat
+                generated passwords as sensitive and store them in a proper password manager.
+                While SafeGen aims to generate strong, random passwords, no tool can guarantee
+                protection against every security risk; use your own judgment for high-stakes
+                accounts. This tool is intended for general use and is not directed at children
+                under 13. By using SafeGen you agree not to use it for unlawful purposes.
+              </p>
+            </details>
+
+            <details>
+              <summary>Disclaimer</summary>
+              <p>
+                Generated passwords are not stored or transmitted by SafeGen — once you close or
+                refresh the page, a generated password is gone unless you've copied or saved it
+                yourself. Store your passwords securely (a password manager is recommended) and
+                never share them. You are solely responsible for the security of accounts created
+                with passwords generated here.
+              </p>
+            </details>
+          </section>
+        </div>
+      </section>
+
+      <section id="settings" class="view" aria-labelledby="settings-title">
+        <div class="section-banner glass reveal">
+          <span class="pill">Settings</span>
+          <h2 id="settings-title">Customize the experience, share the tool, and manage extras.</h2>
+          <p>
+            Switch themes, update accents, soften or intensify motion, open credits, share the
+            tool, and connect your own support and social links.
+          </p>
+        </div>
+
+        <div class="settings-grid">
+          <section class="card glass reveal reveal-delay-1">
+            <div class="section-head compact">
+              <div>
+                <p class="section-kicker">Appearance</p>
+                <h3>Theme customization</h3>
+              </div>
+            </div>
+
+            <div class="settings-block">
+              <label class="settings-label">Theme mode</label>
+              <div class="segmented">
+                <button class="segment active" data-theme-choice="light" type="button">Light</button>
+                <button class="segment" data-theme-choice="dark" type="button">Dark</button>
+              </div>
+            </div>
+
+            <div class="settings-block">
+              <label class="settings-label">Accent color</label>
+              <div class="accent-row">
+                <button class="accent-swatch active" data-accent="indigo" type="button" aria-label="Indigo"></button>
+                <button class="accent-swatch emerald" data-accent="emerald" type="button" aria-label="Emerald"></button>
+                <button class="accent-swatch rose" data-accent="rose" type="button" aria-label="Rose"></button>
+                <button class="accent-swatch amber" data-accent="amber" type="button" aria-label="Amber"></button>
+              </div>
+            </div>
+
+            <div class="settings-block">
+              <div class="row between">
+                <label class="settings-label" for="radiusRange">Corner radius</label>
+                <strong id="radiusValue">22px</strong>
+              </div>
+              <input id="radiusRange" class="slider" type="range" min="12" max="34" value="22" />
+            </div>
+
+            <div class="settings-block">
+              <div class="row between">
+                <label class="settings-label" for="motionRange">Motion intensity</label>
+                <strong id="motionValue">60%</strong>
+              </div>
+              <input id="motionRange" class="slider" type="range" min="0" max="100" value="70" />
+            </div>
+
+            <div class="settings-actions">
+              <button id="resetSettingsBtn" class="ghost-button" type="button">Reset preferences</button>
+            </div>
+          </section>
+
+          <section class="card glass reveal reveal-delay-2">
+            <div class="section-head compact">
+              <div>
+                <p class="section-kicker">Extras</p>
+                <h3>Share, support, and credits</h3>
+              </div>
+            </div>
+
+            <div class="extras-grid">
+              <button id="shareBtn" class="primary-outline-button full" type="button">Share this tool</button>
+              <button id="creditsBtn" class="primary-outline-button full" type="button">Open credits page</button>
+              <a href="#" data-placeholder-link="true" class="primary-button full link-button">Buy me a coffee</a>
+            </div>
+
+            <div class="social-grid settings-socials">
+              <a href="#" data-placeholder-link="true" class="social-link">Behance</a>
+              <a href="#" data-placeholder-link="true" class="social-link">Dribbble</a>
+              <a href="#" data-placeholder-link="true" class="social-link">YouTube</a>
+              <a href="#" data-placeholder-link="true" class="social-link">Telegram</a>
+              <a href="#" data-placeholder-link="true" class="social-link">Discord</a>
+              <a href="#" data-placeholder-link="true" class="social-link">Newsletter</a>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer glass">
+      <div class="footer-brand">
+        <div class="footer-brand-row">
+          <img src="favicon.svg" alt="" class="footer-logo" />
+          <div>
+            <strong>SafeGen</strong>
+            <p>A smooth and secure password generator with editable mock content.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-links-block">
+        <p class="footer-title">Quick navigation</p>
+        <div class="footer-links">
+          <button class="footer-link" data-view-target="home" type="button">Home</button>
+          <button class="footer-link" data-view-target="about" type="button">About Us</button>
+          <button class="footer-link" data-view-target="settings" type="button">Settings</button>
+        </div>
+      </div>
+
+      <div class="footer-links-block">
+        <p class="footer-title">Helpful links</p>
+        <div class="footer-links">
+          <a href="#" data-view-target="about" class="footer-link footer-anchor">Privacy</a>
+          <a href="#" data-view-target="about" class="footer-link footer-anchor">Terms</a>
+          <a href="mailto:" class="footer-link footer-anchor">Support</a>
+        </div>
+      </div>
+    </footer>
+
+    <p class="footer-copyright">© 2026 Poorvith M P. All rights reserved.</p>
+
+    <button id="toTopBtn" class="to-top" type="button" aria-label="Go to top">↑</button>
+
+    <nav id="bottomDock" class="bottom-dock glass" aria-label="Primary navigation">
+      <button class="dock-link active" data-view-target="home" type="button" aria-label="Home">
+        <span class="dock-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1z"/></svg>
+        </span>
+        <span class="dock-label">Home</span>
+      </button>
+      <button class="dock-link" data-view-target="about" type="button" aria-label="About Us">
+        <span class="dock-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>
+        </span>
+        <span class="dock-label">About</span>
+      </button>
+      <button class="dock-link" data-view-target="settings" type="button" aria-label="Settings">
+        <span class="dock-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94a7.89 7.89 0 0 0 .05-.94 7.89 7.89 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.48.48 0 0 0-.49-.42h-3.84a.48.48 0 0 0-.49.42l-.36 2.54a7.3 7.3 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.89 7.89 0 0 0-.05.94 7.89 7.89 0 0 0 .05.94L2.83 14.52a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54a.48.48 0 0 0 .49.42h3.84a.48.48 0 0 0 .49-.42l.36-2.54c.58-.23 1.13-.55 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg>
+        </span>
+        <span class="dock-label">Settings</span>
+      </button>
+    </nav>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <div id="creditsModal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="true"></div>
+      <div class="modal-card glass" role="dialog" aria-modal="true" aria-labelledby="credits-title">
+        <div class="section-head compact">
+          <div>
+            <p class="section-kicker">Credits page</p>
+            <h3 id="credits-title">Project credits</h3>
+          </div>
+          <button id="closeCreditsBtn" class="icon-close" type="button" aria-label="Close credits">×</button>
+        </div>
+
+        <div class="credits-list">
+          <div class="credit-item">
+            <strong>Identity</strong>
+            <span>SafeGen branding, shield logo, bottom dock navigation, loader, and premium motion polish</span>
+          </div>
+          <div class="credit-item">
+            <strong>Built with</strong>
+            <span>Pure HTML, CSS, and JavaScript only</span>
+          </div>
+          <div class="credit-item">
+            <strong>Editable placeholders</strong>
+            <span>About text, social links, legal docs, support links, and creator details</span>
+          </div>
+          <div class="credit-item">
+            <strong>Customization</strong>
+            <span>Theme mode, accent presets, radius control, motion intensity, and share actions</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js"></script>
+  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0c8f276ab49322e',t:'MTc4MTYwMzgxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
