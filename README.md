@@ -82,12 +82,6 @@ Free. No tiers, no paywall, no account required.
 | [PortfolioGen](https://github.com/prvthmpcypher/portfoliogen) | Browser-only portfolio generator |
 | [CypherPDF](https://github.com/prvthmpcypher/cypherpdf) | Clutter-free PDF reader for Android |
 
-## 🗺 Roadmap
-
-- [ ] Optional passphrase generation mode
-- [ ] Export Open Graph / meta tags for richer link previews
-- [ ] Split legal pages into standalone HTML files
-- [ ] Add CSP meta tag for defense-in-depth
 
 ## 🤝 Contributing
 
