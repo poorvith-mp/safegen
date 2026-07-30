@@ -4,7 +4,7 @@ import { useToast } from '../context/ToastContext';
 import type { PasswordOptions, SecurityAudit } from '../types';
 import { triggerConfetti } from '../utils/generator';
 import { animateCopyBurst, animatePasswordRefresh } from '../utils/gsapUtils';
-import { Copy, RefreshCw, Sparkles, Key, Check } from 'lucide-react';
+import { Copy, RefreshCw, Sparkles, Check } from 'lucide-react';
 
 interface PasswordDisplayProps {
   password: string;
