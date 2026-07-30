@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Lock, Moon, Sun, Monitor } from 'lucide-react';
+import { ArrowLeft, Lock, Moon, Sun } from 'lucide-react';
 
 export interface CypherHeaderProps {
   appName: string;
