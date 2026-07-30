@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --canvas: #FBFBFA;
+    --surface: #FFFFFF;
+    --border: #EAEAEA;
+    --border-strong: #D4D4D0;
+    --text-main: #111111;
+    --text-muted: #787774;
+    --text-subtle: #A1A09C;
+
+    --pastel-green-bg: #EDF3EC;
+    --pastel-green-text: #346538;
+    --pastel-blue-bg: #E1F3FE;
+    --pastel-blue-text: #1F6C9F;
+    --pastel-red-bg: #FDEBEC;
+    --pastel-red-text: #9F2F2D;
+    --pastel-yellow-bg: #FBF3DB;
+    --pastel-yellow-text: #956400;
+
+    --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Geist Mono', 'SF Mono', 'JetBrains Mono', monospace;
+    --font-serif: 'Newsreader', 'Instrument Serif', Georgia, serif;
+
+    --radius: 8px;
+    --motion-factor: 1;
+  }
+
+  .dark {
+    --canvas: #0F0F0E;
+    --surface: #171716;
+    --border: #262624;
+    --border-strong: #3D3C38;
+    --text-main: #EDEDEC;
+    --text-muted: #9E9D98;
+    --text-subtle: #6E6D68;
+
+    --pastel-green-bg: #1B291D;
+    --pastel-green-text: #86EFAC;
+    --pastel-blue-bg: #122838;
+    --pastel-blue-text: #7DD3FC;
+    --pastel-red-bg: #331A1C;
+    --pastel-red-text: #FCA5A5;
+    --pastel-yellow-bg: #2B2414;
+    --pastel-yellow-text: #FDE047;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Fonts */
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* Physical Keystroke UIs */
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  background-color: var(--surface);
+  color: var(--text-main);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Crisp Minimalist Borders */
+.border-crisp {
+  border: 1px solid var(--border);
+}
+
+.border-crisp-strong {
+  border: 1px solid var(--border-strong);
+}
+
+/* Muted Pastels */
+.badge-green {
+  background-color: var(--pastel-green-bg);
+  color: var(--pastel-green-text);
+}
+
+.badge-blue {
+  background-color: var(--pastel-blue-bg);
+  color: var(--pastel-blue-text);
+}
+
+.badge-red {
+  background-color: var(--pastel-red-bg);
+  color: var(--pastel-red-text);
+}
+
+.badge-yellow {
+  background-color: var(--pastel-yellow-bg);
+  color: var(--pastel-yellow-text);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+/* Low motion override for accessibility */
+.low-motion * {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
