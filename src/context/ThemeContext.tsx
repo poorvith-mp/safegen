@@ -27,7 +27,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return { ...DEFAULT_PREFERENCES, ...JSON.parse(stored) };
+        return { ...DEFAULT_PREFERENCES, ...JSON.parse(stored), theme: 'light' };
       }
     } catch {
       // Ignore parse errors
@@ -39,12 +39,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const root = document.documentElement;
     const body = document.body;
 
-    body.setAttribute('data-theme', preferences.theme);
-    if (preferences.theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    body.setAttribute('data-theme', 'light');
+    root.classList.remove('dark');
 
     body.setAttribute('data-accent', preferences.accent);
     root.style.setProperty('--radius', `${preferences.radius}px`);
@@ -57,13 +53,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...preferences, theme: 'light' }));
     } catch (e) {
       console.error('Failed to save preferences', e);
     }
   }, [preferences]);
 
-  const setTheme = (theme: ThemeMode) => setPreferences((prev) => ({ ...prev, theme }));
+  const setTheme = (_theme: ThemeMode) => setPreferences((prev) => ({ ...prev, theme: 'light' }));
   const setAccent = (accent: AccentColor) => setPreferences((prev) => ({ ...prev, accent }));
   const setRadius = (radius: number) => setPreferences((prev) => ({ ...prev, radius }));
   const setMotion = (motion: number) => setPreferences((prev) => ({ ...prev, motion }));
@@ -74,6 +70,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ThemeContext.Provider
       value={{
         ...preferences,
+        theme: 'light',
         setTheme,
         setAccent,
         setRadius,

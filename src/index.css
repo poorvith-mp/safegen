@@ -2,13 +2,19 @@
 
 @layer base {
   :root {
-    --canvas: #FBFBFA;
-    --surface: #FFFFFF;
-    --border: #EAEAEA;
-    --border-strong: #D4D4D0;
-    --text-main: #111111;
-    --text-muted: #787774;
-    --text-subtle: #A1A09C;
+    --bg-canvas: #FBF8FA;
+    --bg-surface: #FFFFFF;
+    --bg-muted: #F6F3F5;
+    --text-primary: #172033;
+    --text-muted: #667085;
+    --accent: #0F766E;
+    --border: #E7ECF2;
+
+    --canvas: var(--bg-canvas);
+    --surface: var(--bg-surface);
+    --border-strong: #C6C6CD;
+    --text-main: var(--text-primary);
+    --text-subtle: #94A3B8;
 
     --pastel-green-bg: #EDF3EC;
     --pastel-green-text: #346538;
@@ -27,28 +33,9 @@
     --motion-factor: 1;
   }
 
-  .dark {
-    --canvas: #0F0F0E;
-    --surface: #171716;
-    --border: #262624;
-    --border-strong: #3D3C38;
-    --text-main: #EDEDEC;
-    --text-muted: #9E9D98;
-    --text-subtle: #6E6D68;
-
-    --pastel-green-bg: #1B291D;
-    --pastel-green-text: #86EFAC;
-    --pastel-blue-bg: #122838;
-    --pastel-blue-text: #7DD3FC;
-    --pastel-red-bg: #331A1C;
-    --pastel-red-text: #FCA5A5;
-    --pastel-yellow-bg: #2B2414;
-    --pastel-yellow-text: #FDE047;
-  }
-
   body {
-    background-color: var(--canvas);
-    color: var(--text-main);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
     font-family: var(--font-sans);
     line-height: 1.6;
     margin: 0;

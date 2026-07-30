@@ -8,7 +8,6 @@ import { HistoryVault } from './components/HistoryVault';
 import { PasswordDisplay } from './components/PasswordDisplay';
 import { StrengthAuditor } from './components/StrengthAuditor';
 import { useHistory } from './context/HistoryContext';
-import { useTheme } from './context/ThemeContext';
 import { useToast } from './context/ToastContext';
 import type { PasswordOptions, ViewType } from './types';
 import { calculateDetailedAudit, generatePassword } from './utils/generator';
@@ -30,7 +29,6 @@ const DEFAULT_OPTIONS: PasswordOptions = {
 };
 
 export function App() {
-  const { theme, setTheme } = useTheme();
   const { showToast } = useToast();
   const { addHistoryItem } = useHistory();
 
@@ -106,16 +104,12 @@ export function App() {
       } else if (e.shiftKey && e.key.toLowerCase() === 'r') {
         e.preventDefault();
         handleSurprise();
-      } else if (e.shiftKey && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        setTheme(theme === 'dark' ? 'light' : 'dark');
-        showToast(`Switched to ${theme === 'dark' ? 'light' : 'dark'} mode`);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleGenerate, password, options, audit, addHistoryItem, showToast, theme, setTheme]);
+  }, [handleGenerate, password, options, audit, addHistoryItem, showToast]);
 
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--text-main)] selection:text-[var(--surface)]">
