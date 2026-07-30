@@ -43,10 +43,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose }) =
               <span>Surprise Preset</span>
               <kbd>Shift+R</kbd>
             </div>
-            <div className="flex items-center justify-between p-2 bg-[var(--canvas)] border-crisp rounded-md">
-              <span>Toggle Dark Theme</span>
-              <kbd>Shift+D</kbd>
-            </div>
+
           </div>
         </div>
 
