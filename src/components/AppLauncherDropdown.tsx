@@ -67,15 +67,18 @@ export const TOOLS_LIST = [
 export const AppLauncherDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
+    supabase.auth.getSession().then(({ data: { session: activeSession } }) => {
+      setSession(activeSession);
+      setUser(activeSession?.user || null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, activeSession) => {
+      setSession(activeSession);
+      setUser(activeSession?.user || null);
     });
 
     function handleClickOutside(event: MouseEvent) {
@@ -98,7 +101,9 @@ export const AppLauncherDropdown: React.FC = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
     setIsOpen(false);
+    window.location.reload();
   };
 
   return (
@@ -168,10 +173,14 @@ export const AppLauncherDropdown: React.FC = () => {
           <div className="grid grid-cols-3 gap-2">
             {TOOLS_LIST.map((tool) => {
               const Icon = tool.icon;
+              const targetUrl = session?.access_token && tool.id !== 'safegen'
+                ? `${tool.url}/#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`
+                : tool.url;
+
               return (
                 <a
                   key={tool.id}
-                  href={tool.url}
+                  href={targetUrl}
                   onClick={() => setIsOpen(false)}
                   className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-900 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 transition group text-center"
                 >
