@@ -22,10 +22,10 @@ export const CypherHeader: React.FC<CypherHeaderProps> = ({
           <a
             href={backUrl}
             className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-emerald-600 transition-colors px-2.5 py-1.5 rounded-md hover:bg-slate-100"
-            title="Back to Cypher Labs"
+            title="Back to PoorvithMP Tools"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">← Back to Cypher Labs</span>
+            <span className="hidden sm:inline">← Back to PoorvithMP Tools</span>
             <span className="sm:hidden">← Back</span>
           </a>
 
