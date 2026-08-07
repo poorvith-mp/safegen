@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { BentoGrid } from './components/BentoGrid';
 import { CreditsModal } from './components/CreditsModal';
 import { DockNav } from './components/DockNav';
@@ -176,6 +177,7 @@ export function App() {
 
       {/* Credits & Keyboard Shortcuts Modal */}
       <CreditsModal isOpen={isCreditsOpen} onClose={() => setIsCreditsOpen(false)} />
+      <Analytics />
     </div>
   );
 }
