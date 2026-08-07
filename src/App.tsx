@@ -29,6 +29,8 @@ const DEFAULT_OPTIONS: PasswordOptions = {
   pattern: 'Lnnn-Lnnn-S'
 };
 
+import { syncEcosystemAuth } from './lib/ecosystemAuth';
+
 export function App() {
   const { showToast } = useToast();
   const { addHistoryItem } = useHistory();
@@ -37,6 +39,13 @@ export function App() {
   const [options, setOptions] = useState<PasswordOptions>(DEFAULT_OPTIONS);
   const [password, setPassword] = useState<string>('');
   const [isCreditsOpen, setIsCreditsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    syncEcosystemAuth((user) => {
+      setCurrentUser(user);
+    });
+  }, []);
 
   const viewContainerRef = useRef<HTMLDivElement>(null);
 
