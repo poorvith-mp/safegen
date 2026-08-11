@@ -13,7 +13,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = (text: string, type: 'success' | 'error' | 'celebrate' | 'info' = 'success') => {
-    const id = Math.random().toString(36).substring(2, 9);
+    const id = globalThis.crypto.randomUUID();
     const newToast: ToastMessage = { id, text, type };
 
     setToasts((prev) => [...prev, newToast]);

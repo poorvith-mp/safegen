@@ -39,9 +39,9 @@ export const HistoryVault: React.FC = () => {
       {/* Vault Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--border)] mb-6">
         <div>
-          <h3 className="text-xl font-serif italic text-[var(--text-main)]">Encrypted History Vault</h3>
+          <h3 className="text-xl font-serif italic text-[var(--text-main)]">Local history</h3>
           <p className="text-xs text-[var(--text-muted)]">
-            Local browser-only password history log. Zero network requests.
+            Stores up to 50 copied secrets, their mode, estimated strength and time in this browser's local storage. It is not encrypted.
           </p>
         </div>
 

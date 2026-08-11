@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { BentoGrid } from './components/BentoGrid';
-import { CreditsModal } from './components/CreditsModal';
-import { DockNav } from './components/DockNav';
 import { GeneratorControls } from './components/GeneratorControls';
 import { Header } from './components/Header';
 import { HistoryVault } from './components/HistoryVault';
@@ -13,6 +11,7 @@ import { useToast } from './context/ToastContext';
 import type { PasswordOptions, ViewType } from './types';
 import { calculateDetailedAudit, generatePassword } from './utils/generator';
 import { animateViewTransition } from './utils/gsapUtils';
+import { randomInt } from './utils/generator';
 
 const DEFAULT_OPTIONS: PasswordOptions = {
   mode: 'random',
@@ -29,8 +28,6 @@ const DEFAULT_OPTIONS: PasswordOptions = {
   pattern: 'Lnnn-Lnnn-S'
 };
 
-import { syncEcosystemAuth } from './lib/ecosystemAuth';
-
 export function App() {
   const { showToast } = useToast();
   const { addHistoryItem } = useHistory();
@@ -38,14 +35,6 @@ export function App() {
   const [currentView, setCurrentView] = useState<ViewType>('generator');
   const [options, setOptions] = useState<PasswordOptions>(DEFAULT_OPTIONS);
   const [password, setPassword] = useState<string>('');
-  const [isCreditsOpen, setIsCreditsOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  useEffect(() => {
-    syncEcosystemAuth((user) => {
-      setCurrentUser(user);
-    });
-  }, []);
 
   const viewContainerRef = useRef<HTMLDivElement>(null);
 
@@ -72,9 +61,9 @@ export function App() {
 
   const handleSurprise = () => {
     const lengths = [12, 16, 20, 24];
-    const newLength = lengths[Math.floor(Math.random() * lengths.length)];
+    const newLength = lengths[randomInt(lengths.length)];
     const modes = ['random', 'passphrase', 'pin'] as const;
-    const newMode = modes[Math.floor(Math.random() * modes.length)];
+    const newMode = modes[randomInt(modes.length)];
 
     setOptions((prev) => ({
       ...prev,
@@ -133,10 +122,10 @@ export function App() {
             {/* Hero Heading */}
             <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
-                Utilitarian Password Engine
+                Make a strong password. Keep it on your device.
               </h1>
               <p className="text-xs sm:text-sm font-mono text-[var(--text-muted)] leading-relaxed">
-                Browser-native cryptographically secure random generator, passphrases, and local vault.
+                Four browser-local generation modes using the Web Crypto API. No account and no secret upload.
               </p>
             </div>
 
@@ -162,9 +151,9 @@ export function App() {
         {currentView === 'audit' && (
           <div className="space-y-6">
             <div className="text-center max-w-2xl mx-auto mb-6">
-              <h1 className="text-3xl font-serif italic mb-2">Cryptographic Auditor</h1>
+              <h1 className="text-3xl font-serif italic mb-2">Strength estimate</h1>
               <p className="text-xs font-mono text-[var(--text-muted)]">
-                In-depth mathematical breakdown of password strength metrics and vulnerability analysis.
+                Entropy and crack time are estimates, assuming uniform generation and 100 billion offline guesses per second. Real attacks and password rules vary.
               </p>
             </div>
             <StrengthAuditor audit={audit} />
@@ -172,20 +161,9 @@ export function App() {
         )}
       </main>
 
-      {/* Floating Bottom Dock Navigation */}
-      <DockNav
-        onGenerate={handleGenerate}
-        onCopy={() => {
-          if (password) {
-            navigator.clipboard.writeText(password);
-            showToast('Password copied', 'success');
-          }
-        }}
-        onOpenModal={() => setIsCreditsOpen(true)}
-      />
-
-      {/* Credits & Keyboard Shortcuts Modal */}
-      <CreditsModal isOpen={isCreditsOpen} onClose={() => setIsCreditsOpen(false)} />
+      <footer className="max-w-6xl w-full mx-auto px-6 py-10 border-t border-[var(--border)] text-xs text-[var(--text-muted)]">
+        Generation stays in this browser. Vercel Analytics measures aggregate visits and does not receive generated secrets.
+      </footer>
       <Analytics />
     </div>
   );
