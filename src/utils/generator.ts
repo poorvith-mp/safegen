@@ -1,4 +1,3 @@
-import confetti from 'canvas-confetti';
 import type { PasswordOptions, SecurityAudit, StrengthRating } from '../types';
 
 export const CHARACTER_SETS = {
@@ -25,21 +24,13 @@ export const PASSPHRASE_WORDS = [
   'sanctuary', 'solace', 'spectrum', 'stellar', 'symphony', 'vanguard', 'vista', 'voyage'
 ];
 
-function randomInt(max: number): number {
-  if (window.crypto?.getRandomValues) {
-    const array = new Uint32Array(1);
-    const limit = Math.floor(0xffffffff / max) * max;
-    let randomNumber = 0;
-
-    do {
-      window.crypto.getRandomValues(array);
-      randomNumber = array[0];
-    } while (randomNumber >= limit);
-
-    return randomNumber % max;
-  }
-
-  return Math.floor(Math.random() * max);
+export function randomInt(max: number): number {
+  if (!Number.isSafeInteger(max) || max <= 0 || max > 0x100000000) throw new RangeError('Random range is invalid');
+  if (!globalThis.crypto?.getRandomValues) throw new Error('Secure random generation is unavailable in this browser');
+  const array = new Uint32Array(1);
+  const limit = Math.floor(0x100000000 / max) * max;
+  do { globalThis.crypto.getRandomValues(array); } while (array[0] >= limit);
+  return array[0] % max;
 }
 
 function getRandomChar(chars: string): string {
@@ -154,7 +145,7 @@ export function formatCrackTime(seconds: number): string {
   if (seconds < 31536000) return `${Math.round(seconds / 86400)} days`;
   if (seconds < 3153600000) return `${Math.round(seconds / 31536000)} years`;
   if (seconds < 315360000000) return `${Math.round(seconds / 3153600000)} centuries`;
-  return 'Over 1,000 centuries (Unbreakable)';
+  return 'Over 1,000 centuries at the stated guess rate';
 }
 
 export function calculateDetailedAudit(password: string, options: PasswordOptions): SecurityAudit {
@@ -196,11 +187,21 @@ export function calculateDetailedAudit(password: string, options: PasswordOption
   }
 
   const length = password.length;
-  const entropy = Math.round(length * Math.log2(poolSize || 1));
+  let entropy: number;
+  if (options.mode === 'passphrase') {
+    entropy = options.wordCount * Math.log2(PASSPHRASE_WORDS.length) + (options.includeNumber ? Math.log2(options.wordCount * 99) : 0);
+  } else if (options.mode === 'pin') {
+    entropy = options.pinLength * Math.log2(10);
+  } else if (options.mode === 'pattern') {
+    entropy = [...options.pattern].reduce((bits, character) => bits + (character === 'L' || character === 'l' ? Math.log2(26) : character === 'n' ? Math.log2(10) : character === 'S' || character === 's' ? Math.log2(CHARACTER_SETS.symbols.length) : 0), 0);
+  } else {
+    entropy = length * Math.log2(poolSize || 1);
+  }
+  entropy = Math.round(entropy);
 
   // GPU Farm speed: 100 Billion guesses/sec
   const guessesPerSecond = 100_000_000_000;
-  const totalCombinations = Math.pow(poolSize, length);
+  const totalCombinations = Math.pow(2, entropy);
   const timeToCrackSeconds = totalCombinations / (2 * guessesPerSecond);
 
   let rating: StrengthRating = 'Strong';
@@ -216,7 +217,7 @@ export function calculateDetailedAudit(password: string, options: PasswordOption
     rating = 'Strong';
     score = Math.max(70, Math.min(88, score));
   } else {
-    rating = 'Unbreakable';
+    rating = 'Very strong';
     score = Math.min(100, score);
   }
 
@@ -241,17 +242,4 @@ export function calculateDetailedAudit(password: string, options: PasswordOption
     warnings,
     tips
   };
-}
-
-export function triggerConfetti() {
-  try {
-    confetti({
-      particleCount: 45,
-      spread: 60,
-      origin: { y: 0.65 },
-      colors: ['#111111', '#787774', '#1F6C9F', '#346538']
-    });
-  } catch (err) {
-    console.error('Confetti trigger error', err);
-  }
 }

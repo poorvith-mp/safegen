@@ -25,7 +25,7 @@ export interface PasswordOptions {
   pattern: string; // e.g. 'Lnnn-Lnnn-S' where L=letter, n=number, S=symbol
 }
 
-export type StrengthRating = 'Weak' | 'Medium' | 'Strong' | 'Unbreakable';
+export type StrengthRating = 'Weak' | 'Medium' | 'Strong' | 'Very strong';
 
 export interface SecurityAudit {
   entropy: number;

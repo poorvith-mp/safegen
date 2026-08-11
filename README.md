@@ -1,32 +1,24 @@
-# React + TypeScript + Vite
+# SafeGen
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+SafeGen generates random passwords, passphrases, numeric PINs, and custom patterns in the browser. Generation uses `crypto.getRandomValues` with rejection sampling; it does not fall back to `Math.random`.
 
-Currently, two official plugins are available:
+## Strength estimates
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Entropy and crack-time figures are estimates. The calculator assumes uniform choices from the stated pool and 100 billion offline guesses per second. Real results depend on an attacker's hardware, the storage algorithm used by a service, predictable user choices, leaks, and reuse. No password is unbreakable.
 
-## React Compiler
+## Local history
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+History is optional in practice: an item is added when you copy it. SafeGen stores at most 50 copied secrets in this browser's local storage, together with generation mode, estimated rating, entropy, and time. The history is not encrypted. Use **Clear history** to remove it from local storage.
 
-## Expanding the Oxlint configuration
+Generated secrets are not uploaded. Vercel Analytics is enabled for aggregate site-usage measurement and does not receive generated values.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Local development
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Create a production bundle with `npm run build`.
+
+Built by [Poorvith M P](https://poorvithmp.com) and released under the MIT licence.

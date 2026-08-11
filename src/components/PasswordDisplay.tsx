@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import { useHistory } from '../context/HistoryContext';
 import { useToast } from '../context/ToastContext';
 import type { PasswordOptions, SecurityAudit } from '../types';
-import { triggerConfetti } from '../utils/generator';
 import { animateCopyBurst, animatePasswordRefresh } from '../utils/gsapUtils';
 import { Copy, RefreshCw, Sparkles, Check } from 'lucide-react';
 
@@ -67,8 +66,7 @@ export const PasswordDisplay: React.FC<PasswordDisplayProps> = ({
 
   const handleSurprise = () => {
     onSurprise();
-    triggerConfetti();
-    showToast('Randomized surprise password!', 'celebrate');
+    showToast('Generator options shuffled', 'info');
   };
 
   const renderColoredPassword = (pwd: string) => {
@@ -159,7 +157,7 @@ export const PasswordDisplay: React.FC<PasswordDisplayProps> = ({
           className="w-full sm:w-auto px-4 py-2.5 text-slate-600 hover:text-emerald-600 hover:bg-slate-100 border border-slate-200 text-xs font-mono rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>Surprise Preset</span>
+          <span>Shuffle options</span>
         </button>
       </div>
     </div>

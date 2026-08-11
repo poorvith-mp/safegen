@@ -20,26 +20,23 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const stored = localStorage.getItem(VAULT_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed: unknown = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed.slice(0, 50).filter((item) => item && typeof item.password === 'string');
       }
-    } catch (e) {
-      console.error('Failed to load history vault', e);
-    }
+    } catch { try { localStorage.removeItem(VAULT_STORAGE_KEY); } catch { /* Storage is unavailable. */ } }
     return [];
   });
 
   useEffect(() => {
     try {
       localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(history));
-    } catch (e) {
-      console.error('Failed to save history vault', e);
-    }
+    } catch { /* Storage can be unavailable; generation still works. */ }
   }, [history]);
 
   const addHistoryItem = (item: Omit<HistoryItem, 'id' | 'timestamp' | 'isFavorite'>) => {
     const newItem: HistoryItem = {
       ...item,
-      id: Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
+      id: globalThis.crypto.randomUUID(),
       timestamp: Date.now(),
       isFavorite: false
     };
@@ -65,6 +62,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const clearHistory = () => {
     setHistory([]);
+    try { localStorage.removeItem(VAULT_STORAGE_KEY); } catch { /* Nothing else to clear. */ }
   };
 
   const exportHistory = (format: 'json' | 'csv') => {
