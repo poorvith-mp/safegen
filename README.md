@@ -23,7 +23,7 @@ SafeGen is my browser-local generator for passwords, passphrases, PINs, and cust
 You need Node.js and npm.
 
 ```bash
-git clone https://github.com/prvthmpcypher/safegen.git
+git clone https://github.com/poorvith-mp/safegen.git
 cd safegen
 npm install
 npm run dev
@@ -74,4 +74,4 @@ SafeGen is available under the [MIT Licence](LICENSE).
 
 ## Author
 
-Built by [Poorvith M P](https://poorvithmp.com). You can also find me on [GitHub](https://github.com/prvthmpcypher).
+Built by [Poorvith M P](https://poorvithmp.com). You can also find me on [GitHub](https://github.com/poorvith-mp).
