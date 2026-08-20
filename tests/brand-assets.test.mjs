@@ -28,3 +28,19 @@ test('SafeGen ships the approved credential identity at required sizes', async (
   assert.deepEqual(pngSize(apple), { width: 180, height: 180 });
   assert.deepEqual(pngSize(og), { width: 1200, height: 630 });
 });
+
+test('the landing app exposes installation guidance for the package, CLI, vault, and MCP bridge', async () => {
+  const [app, header, docs] = await Promise.all([
+    readFile(new URL('../src/App.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/Header.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/DocumentationHub.tsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(header, /label: 'Docs'/);
+  assert.match(app, /currentView === 'docs'/);
+  assert.match(docs, /npm install @poorvith-mp\/safegen/);
+  assert.match(docs, /@poorvith-mp\/safegen-cli generate password/);
+  assert.match(docs, /vault init/);
+  assert.match(docs, /safegen_get_credential/);
+  assert.match(docs, /trusted MCP host/i);
+});
