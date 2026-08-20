@@ -6,6 +6,8 @@
 
 SafeGen is my browser-local generator for passwords, passphrases, PINs, and custom patterns. I built it around a simple boundary: a newly generated secret should not need to cross a network before you can use it.
 
+![SafeGen 2.0 — generate, store, and approve credentials on your device](docs/assets/safegen-2-cover.png)
+
 [Open SafeGen](https://safegen.poorvithmp.com) · [View the generator](docs/assets/product.png) · [My portfolio](https://poorvithmp.com)
 
 ## Main features
@@ -17,6 +19,47 @@ SafeGen is my browser-local generator for passwords, passphrases, PINs, and cust
 - Browser cryptography through `crypto.getRandomValues` with rejection sampling and no `Math.random` fallback.
 - Entropy, rating, and estimated crack-time guidance.
 - Searchable local history for copied items plus locally saved preferences.
+- A typed, tree-shakeable core package for Node.js and browsers.
+- A CLI for generation and an AES-256-GCM encrypted local vault.
+- An MCP server that asks the user to unlock and approve every credential request.
+
+## Package and CLI
+
+The original `safegen` package name is already owned by someone else on npm, so SafeGen uses scoped names. The executable is still `safegen`.
+
+```bash
+npm install @poorvith-mp/safegen
+npx @poorvith-mp/safegen-cli generate password --length 20 --uppercase --lowercase --numbers --symbols
+```
+
+```ts
+import { calculateAudit, generatePassword } from '@poorvith-mp/safegen';
+
+const credential = generatePassword({ length: 20 });
+console.log(calculateAudit(credential));
+```
+
+Initialize and use the local vault:
+
+```bash
+npx @poorvith-mp/safegen-cli vault init
+npx @poorvith-mp/safegen-cli vault save --service github.com --username poorvith
+npx @poorvith-mp/safegen-cli vault list
+```
+
+The credential value and master password are collected interactively. They are never accepted as command arguments.
+
+## Agent approval bridge
+
+Start the stdio MCP server with:
+
+```bash
+npx @poorvith-mp/safegen-cli mcp
+```
+
+The `safegen_get_credential` tool accepts a service and optional username. SafeGen opens a short-lived local unlock page for the master password, then uses MCP elicitation for an explicit approval. Requests are recorded in `~/.safegen/access.log` without credential values.
+
+An approved credential is returned in the MCP tool result, so it enters the agent's tool context. The vault removes the need to paste it into a chat message, but it cannot make a credential invisible to the agent or host receiving the tool result. Only configure the server in an MCP host you trust.
 
 ## Installation
 
@@ -52,11 +95,14 @@ Vercel Analytics is enabled for aggregate site-usage measurement and does not re
 
 Entropy and crack-time figures are estimates based on stated assumptions. Real risk also depends on reuse, leaks, predictable choices, an attacker's hardware, and how a service stores credentials. No password is unbreakable.
 
+The CLI vault uses AES-256-GCM with a random salt and IV. Its key is derived with PBKDF2-HMAC-SHA256 at 600,000 iterations. The encrypted file is stored at `~/.safegen/vault.enc`; there is no recovery route if the master password is lost.
+
 ## Built with
 
 - React and TypeScript
 - Vite and Tailwind CSS
 - Web Crypto API
+- Node.js crypto, Commander, Inquirer, and the official MCP TypeScript SDK
 - GSAP and Lucide icons
 - Vercel Analytics
 

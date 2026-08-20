@@ -32,6 +32,7 @@ export interface SecurityAudit {
   rating: StrengthRating;
   timeToCrackSeconds: number;
   crackTimeFormatted: string;
+  crackTime: string;
   poolSize: number;
   score: number; // 0-100
   warnings: string[];

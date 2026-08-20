@@ -1,11 +1,16 @@
 {
   "name": "safegen",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.app.json && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
+    "build": "npm run build:packages && tsc -p tsconfig.app.json && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
+    "build:packages": "npm run build --workspace @poorvith-mp/safegen && npm run build --workspace @poorvith-mp/safegen-cli",
+    "test": "npm run build:packages && node --test tests/*.test.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -29,5 +34,22 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.1.1"
-  }
+  },
+  "description": "<p align=\"center\"><img src=\"docs/assets/logo.svg\" width=\"88\" alt=\"SafeGen logo\"></p>",
+  "main": "postcss.config.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poorvith-mp/safegen.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/poorvith-mp/safegen/issues"
+  },
+  "homepage": "https://github.com/poorvith-mp/safegen#readme"
 }
