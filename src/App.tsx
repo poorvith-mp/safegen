@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { BentoGrid } from './components/BentoGrid';
 import { GeneratorControls } from './components/GeneratorControls';
+import { DocumentationHub } from './components/DocumentationHub';
 import { Header } from './components/Header';
 import { HistoryVault } from './components/HistoryVault';
 import { PasswordDisplay } from './components/PasswordDisplay';
@@ -147,6 +148,8 @@ export function App() {
         )}
 
         {currentView === 'vault' && <HistoryVault />}
+
+        {currentView === 'docs' && <DocumentationHub />}
 
         {currentView === 'audit' && (
           <div className="space-y-6">

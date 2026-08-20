@@ -1,4 +1,4 @@
-export type ViewType = 'generator' | 'vault' | 'audit' | 'settings';
+export type ViewType = 'generator' | 'vault' | 'audit' | 'docs';
 
 export type ThemeMode = 'light' | 'dark';
 
