@@ -1,4 +1,4 @@
-import { calculateAudit, generatePIN, generatePassphrase, generatePassword, generatePattern } from '@poorvith-mp/safegen';
+import { calculateAudit, generatePIN, generatePassphrase, generatePassword, generatePattern } from '@poorvithmp/safegen';
 import type { Command } from 'commander';
 
 function print(value: string, audit: boolean, options: Record<string, unknown> = {}): void {

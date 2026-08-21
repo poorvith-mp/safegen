@@ -28,12 +28,12 @@ SafeGen is my browser-local generator for passwords, passphrases, PINs, and cust
 The original `safegen` package name is already owned by someone else on npm, so SafeGen uses scoped names. The executable is still `safegen`.
 
 ```bash
-npm install @poorvith-mp/safegen
-npx @poorvith-mp/safegen-cli generate password --length 20 --uppercase --lowercase --numbers --symbols
+npm install @poorvithmp/safegen
+npx @poorvithmp/safegen-cli generate password --length 20 --uppercase --lowercase --numbers --symbols
 ```
 
 ```ts
-import { calculateAudit, generatePassword } from '@poorvith-mp/safegen';
+import { calculateAudit, generatePassword } from '@poorvithmp/safegen';
 
 const credential = generatePassword({ length: 20 });
 console.log(calculateAudit(credential));
@@ -42,9 +42,9 @@ console.log(calculateAudit(credential));
 Initialize and use the local vault:
 
 ```bash
-npx @poorvith-mp/safegen-cli vault init
-npx @poorvith-mp/safegen-cli vault save --service github.com --username poorvith
-npx @poorvith-mp/safegen-cli vault list
+npx @poorvithmp/safegen-cli vault init
+npx @poorvithmp/safegen-cli vault save --service github.com --username poorvith
+npx @poorvithmp/safegen-cli vault list
 ```
 
 The credential value and master password are collected interactively. They are never accepted as command arguments.
@@ -54,7 +54,7 @@ The credential value and master password are collected interactively. They are n
 Start the stdio MCP server with:
 
 ```bash
-npx @poorvith-mp/safegen-cli mcp
+npx @poorvithmp/safegen-cli mcp
 ```
 
 The `safegen_get_credential` tool accepts a service and optional username. SafeGen opens a short-lived local unlock page for the master password, then uses MCP elicitation for an explicit approval. Requests are recorded in `~/.safegen/access.log` without credential values.

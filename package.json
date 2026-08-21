@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:packages && tsc -p tsconfig.app.json && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
-    "build:packages": "npm run build --workspace @poorvith-mp/safegen && npm run build --workspace @poorvith-mp/safegen-cli",
+    "build:packages": "npm run build --workspace @poorvithmp/safegen && npm run build --workspace @poorvithmp/safegen-cli",
     "test": "npm run build:packages && node --test tests/*.test.mjs",
     "lint": "oxlint",
     "preview": "vite preview"

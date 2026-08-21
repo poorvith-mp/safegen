@@ -38,8 +38,8 @@ test('the landing app exposes installation guidance for the package, CLI, vault,
 
   assert.match(header, /label: 'Docs'/);
   assert.match(app, /currentView === 'docs'/);
-  assert.match(docs, /npm install @poorvith-mp\/safegen/);
-  assert.match(docs, /@poorvith-mp\/safegen-cli generate password/);
+  assert.match(docs, /npm install @poorvithmp\/safegen/);
+  assert.match(docs, /@poorvithmp\/safegen-cli generate password/);
   assert.match(docs, /vault init/);
   assert.match(docs, /safegen_get_credential/);
   assert.match(docs, /trusted MCP host/i);

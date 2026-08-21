@@ -1,5 +1,5 @@
 {
-  "name": "@poorvith-mp/safegen",
+  "name": "@poorvithmp/safegen",
   "version": "2.0.0",
   "description": "Typed, zero-dependency credential generation and auditing for browsers and Node.js.",
   "author": "Poorvith M P",

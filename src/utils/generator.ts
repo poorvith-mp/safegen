@@ -2,7 +2,7 @@ import {
   calculateAudit,
   generateCredential,
   type PasswordOptions as CorePasswordOptions,
-} from '@poorvith-mp/safegen';
+} from '@poorvithmp/safegen';
 import type { PasswordOptions, SecurityAudit } from '../types';
 
 export {
@@ -14,7 +14,7 @@ export {
   generatePattern,
   generateRandomPassword,
   randomInt,
-} from '@poorvith-mp/safegen';
+} from '@poorvithmp/safegen';
 
 export function generatePassword(options: PasswordOptions): string {
   return generateCredential(options as CorePasswordOptions);
