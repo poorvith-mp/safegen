@@ -12,7 +12,8 @@
     "build:packages": "npm run build --workspace @poorvithmp/safegen && npm run build --workspace @poorvithmp/safegen-cli",
     "test": "npm run build:packages && node --test tests/*.test.mjs",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
