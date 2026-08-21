@@ -19,9 +19,9 @@ SafeGen is a single-page React app that generates passwords, passphrases, PINs, 
 
 SafeGen becomes three things:
 
-1. **`@poorvith-mp/safegen` npm package** — a zero-dependency library exporting all generation and audit functions. It uses the runtime's native cryptographic random source and has no `Math.random` fallback. Importable as `import { generatePassword } from '@poorvith-mp/safegen'`. The unscoped `safegen` package name is already owned by another publisher.
+1. **`@poorvithmp/safegen` npm package** — a zero-dependency library exporting all generation and audit functions. It uses the runtime's native cryptographic random source and has no `Math.random` fallback. Importable as `import { generatePassword } from '@poorvithmp/safegen'`. The unscoped `safegen` package name is already owned by another publisher.
 
-2. **`@poorvith-mp/safegen-cli` CLI** — a terminal tool with the `safegen` binary that wraps the library and adds an encrypted local credential vault. The vault is a single JSON file encrypted with AES-256-GCM, unlocked by a master password the user sets on first use. Vault location: `~/.safegen/vault.enc`.
+2. **`@poorvithmp/safegen-cli` CLI** — a terminal tool with the `safegen` binary that wraps the library and adds an encrypted local credential vault. The vault is a single JSON file encrypted with AES-256-GCM, unlocked by a master password the user sets on first use. Vault location: `~/.safegen/vault.enc`.
 
 3. **MCP agent-auth tool** — SafeGen exposes an MCP tool (`safegen_get_credential`) that AI agents can call when they need a stored credential. The flow:
    - Agent calls `safegen_get_credential { service: "github.com" }`.
@@ -38,36 +38,36 @@ AI agents (Claude Code, Codex, coding assistants) increasingly act on behalf of 
 ## 4. Acceptance criteria
 
 ### npm package
-- [ ] `npm install @poorvith-mp/safegen` installs successfully and exposes `generatePassword`, `generatePassphrase`, `generatePIN`, `generatePattern`, `calculateAudit` as named exports.
-- [ ] Generation uses `crypto.randomBytes` in Node and `crypto.getRandomValues` in browsers, auto-detected at runtime. No `Math.random` fallback.
-- [ ] All options from the current web UI (length, character sets, word count, separator, capitalize, include number, PIN length, pattern template) are supported as typed function parameters.
-- [ ] `calculateAudit(password)` returns entropy, crack time, rating, warnings, and tips — matching the web app's output.
-- [ ] Package has zero runtime dependencies.
-- [ ] Package ships with TypeScript type declarations.
-- [ ] Package is tree-shakeable (ESM with `"sideEffects": false`).
+- [x] `npm install @poorvithmp/safegen` installs successfully and exposes `generatePassword`, `generatePassphrase`, `generatePIN`, `generatePattern`, `calculateAudit` as named exports.
+- [x] Generation uses `crypto.randomBytes` in Node and `crypto.getRandomValues` in browsers, auto-detected at runtime. No `Math.random` fallback.
+- [x] All options from the current web UI (length, character sets, word count, separator, capitalize, include number, PIN length, pattern template) are supported as typed function parameters.
+- [x] `calculateAudit(password)` returns entropy, crack time, rating, warnings, and tips — matching the web app's output.
+- [x] Package has zero runtime dependencies.
+- [x] Package ships with TypeScript type declarations.
+- [x] Package is tree-shakeable (ESM with `"sideEffects": false`).
 
 ### CLI
-- [ ] `npx safegen generate password --length 20 --uppercase --lowercase --numbers --symbols` prints a password to stdout.
-- [ ] `npx safegen generate passphrase --words 4 --separator -` prints a passphrase.
-- [ ] `npx safegen generate pin --length 6` prints a PIN.
-- [ ] `npx safegen generate pattern --template "LLnn-SSll"` prints a pattern-filled string.
-- [ ] All generate commands accept `--audit` flag that appends entropy/rating/crack-time to output.
-- [ ] `npx safegen vault init` prompts for a master password and creates `~/.safegen/vault.enc`.
-- [ ] `npx safegen vault save --service github.com --username poorvith` prompts for the credential value (never taken as a CLI argument), encrypts, and stores it.
-- [ ] `npx safegen vault get --service github.com` prompts for master password, decrypts, prints the credential.
-- [ ] `npx safegen vault list` shows all saved service names (not credentials).
-- [ ] `npx safegen vault delete --service github.com` removes an entry after confirmation.
-- [ ] Vault file is AES-256-GCM encrypted with a key derived from the master password via PBKDF2-HMAC-SHA256 (600k iterations, random salt).
-- [ ] CLI exits with appropriate codes: 0 success, 1 error, 130 user interrupt.
+- [x] `npx @poorvithmp/safegen-cli generate password --length 20 --uppercase --lowercase --numbers --symbols` prints a password to stdout.
+- [x] `npx @poorvithmp/safegen-cli generate passphrase --words 4 --separator -` prints a passphrase.
+- [x] `npx @poorvithmp/safegen-cli generate pin --length 6` prints a PIN.
+- [x] `npx @poorvithmp/safegen-cli generate pattern -t "LLnn-SSll"` prints a pattern-filled string.
+- [x] All generate commands accept `--audit` flag that appends entropy/rating/crack-time to output.
+- [x] `npx @poorvithmp/safegen-cli vault init` prompts for a master password and creates `~/.safegen/vault.enc`.
+- [x] `npx @poorvithmp/safegen-cli vault save --service github.com --username poorvith` prompts for the credential value (never taken as a CLI argument), encrypts, and stores it.
+- [x] `npx @poorvithmp/safegen-cli vault get --service github.com` prompts for master password, decrypts, prints the credential.
+- [x] `npx @poorvithmp/safegen-cli vault list` shows all saved service names (not credentials).
+- [x] `npx @poorvithmp/safegen-cli vault delete --service github.com` removes an entry after confirmation.
+- [x] Vault file is AES-256-GCM encrypted with a key derived from the master password via PBKDF2-HMAC-SHA256 (600k iterations, random salt).
+- [x] CLI exits with appropriate codes: 0 success, 1 error, 130 user interrupt.
 
 ### MCP agent-auth bridge
-- [ ] Running `npx @poorvith-mp/safegen-cli mcp` starts a stdio MCP server exposing a `safegen_get_credential` tool.
-- [ ] Tool schema accepts `{ service: string, username?: string }` and returns `{ credential: string, service: string, username: string }`.
-- [ ] Before returning any credential, the MCP server requests explicit approval through MCP elicitation. Credential is returned only after an accepted approval response.
-- [ ] Denial returns an MCP tool error with message `"User denied credential access"`.
-- [ ] If the vault is locked, the MCP server uses URL-mode elicitation and a short-lived loopback page for the master password before the approval prompt.
-- [ ] MCP server logs every credential request (timestamp, service, approved/denied) to `~/.safegen/access.log` (no credentials in the log).
-- [ ] The tool works when configured in Claude Code's MCP settings (`claude mcp add safegen -- npx safegen mcp`).
+- [x] Running `npx @poorvithmp/safegen-cli mcp` starts a stdio MCP server exposing a `safegen_get_credential` tool.
+- [x] Tool schema accepts `{ service: string, username?: string }` and returns `{ credential: string, service: string, username: string }`.
+- [x] Before returning any credential, the MCP server requests explicit approval through MCP elicitation. Credential is returned only after an accepted approval response.
+- [x] Denial returns an MCP tool error with message `"User denied credential access"`.
+- [x] If the vault is locked, the MCP server uses URL-mode elicitation and a short-lived loopback page for the master password before the approval prompt.
+- [x] MCP server logs every credential request (timestamp, service, approved/denied) to `~/.safegen/access.log` (no credentials in the log).
+- [x] The tool works when configured in Claude Code's MCP settings (`claude mcp add safegen -- npx @poorvithmp/safegen-cli mcp`).
 
 ## 5. Out of scope
 

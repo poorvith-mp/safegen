@@ -8,7 +8,7 @@ SafeGen is my browser-local generator for passwords, passphrases, PINs, and cust
 
 ![SafeGen 2.0 — generate, store, and approve credentials on your device](docs/assets/safegen-2-cover.png)
 
-[Open SafeGen](https://safegen.poorvithmp.com) · [View the generator](docs/assets/product.png) · [My portfolio](https://poorvithmp.com)
+[Open SafeGen](https://safegen.poorvithmp.com) · [View the generator](docs/assets/product.png) · [My portfolio](https://poorvithmp.com) · [![npm core](https://img.shields.io/npm/v/@poorvithmp/safegen?label=@poorvithmp/safegen)](https://www.npmjs.com/package/@poorvithmp/safegen) · [![npm cli](https://img.shields.io/npm/v/@poorvithmp/safegen-cli?label=@poorvithmp/safegen-cli)](https://www.npmjs.com/package/@poorvithmp/safegen-cli)
 
 ## Main features
 
