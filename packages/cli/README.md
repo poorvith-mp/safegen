@@ -1,11 +1,11 @@
-# @poorvith-mp/safegen-cli
+# @poorvithmp/safegen-cli
 
 SafeGen's terminal generator, AES-256-GCM local vault, and approval-gated MCP credential bridge.
 
 ```bash
-npx @poorvith-mp/safegen-cli generate password --length 20
-npx @poorvith-mp/safegen-cli vault init
-npx @poorvith-mp/safegen-cli mcp
+npx @poorvithmp/safegen-cli generate password --length 20
+npx @poorvithmp/safegen-cli vault init
+npx @poorvithmp/safegen-cli mcp
 ```
 
 An approved credential enters the requesting agent's MCP tool context. Only connect SafeGen to an MCP host you trust.

@@ -1,9 +1,9 @@
-# @poorvith-mp/safegen
+# @poorvithmp/safegen
 
 SafeGen's zero-dependency TypeScript core for generating and auditing passwords, passphrases, PINs, and custom patterns with the runtime's native cryptographic random source.
 
 ```ts
-import { calculateAudit, generatePassword } from '@poorvith-mp/safegen';
+import { calculateAudit, generatePassword } from '@poorvithmp/safegen';
 
 const credential = generatePassword({ length: 20 });
 console.log(credential, calculateAudit(credential));
