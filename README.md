@@ -91,7 +91,7 @@ npm run build
 
 Generated values are not uploaded for generation. Preferences and up to 50 copied items can be stored in this browser's local storage. That history is not encrypted and can be read by someone with access to the same browser profile.
 
-Vercel Analytics is enabled for aggregate site-usage measurement and does not receive generated values.
+The website does not run a page-analytics service. Generated values remain in the browser.
 
 Entropy and crack-time figures are estimates based on stated assumptions. Real risk also depends on reuse, leaks, predictable choices, an attacker's hardware, and how a service stores credentials. No password is unbreakable.
 
@@ -104,7 +104,7 @@ The CLI vault uses AES-256-GCM with a random salt and IV. Its key is derived wit
 - Web Crypto API
 - Node.js crypto, Commander, Inquirer, and the official MCP TypeScript SDK
 - GSAP and Lucide icons
-- Vercel Analytics
+- Cloudflare Workers static assets
 
 ## Contributing
 

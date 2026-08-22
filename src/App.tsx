@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Analytics } from '@vercel/analytics/react';
 import { BentoGrid } from './components/BentoGrid';
 import { GeneratorControls } from './components/GeneratorControls';
 import { DocumentationHub } from './components/DocumentationHub';
@@ -165,9 +164,8 @@ export function App() {
       </main>
 
       <footer className="max-w-6xl w-full mx-auto px-6 py-10 border-t border-[var(--border)] text-xs text-[var(--text-muted)]">
-        Generation stays in this browser. Vercel Analytics measures aggregate visits and does not receive generated secrets.
+        Generation stays in this browser. No analytics service receives generated secrets or page activity.
       </footer>
-      <Analytics />
     </div>
   );
 }
