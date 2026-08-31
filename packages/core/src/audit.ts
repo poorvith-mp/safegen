@@ -23,7 +23,7 @@ export function calculateAudit(password: string, options: PasswordOptions = {}):
   let entropy: number;
   if (options.mode === 'passphrase') {
     const words = options.words ?? options.wordCount ?? password.split(options.separator ?? '-').length;
-    poolSize = PASSPHRASE_WORDS.length;
+    poolSize = 7776; // Standard EFF / Diceware wordlist baseline (12.92 bits per word)
     entropy = words * Math.log2(poolSize) + (options.includeNumber ? Math.log2(words * 100) : 0);
   } else if (options.mode === 'pin') {
     poolSize = 10;
