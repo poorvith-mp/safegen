@@ -1,5 +1,8 @@
 import { secureRandomInt } from './crypto-provider.js';
+import { PASSPHRASE_WORDS } from './eff-wordlist.js';
 import type { PassphraseOptions, PasswordOptions, PatternOptions, PinOptions, RandomPasswordOptions } from './types.js';
+
+export { PASSPHRASE_WORDS } from './eff-wordlist.js';
 
 export const CHARACTER_SETS = {
   uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -7,20 +10,6 @@ export const CHARACTER_SETS = {
   numbers: '0123456789',
   symbols: '!@#$%^&*()_+{}[]<>?/|~=-',
 } as const;
-
-export const PASSPHRASE_WORDS = [
-  'anchor', 'beacon', 'canvas', 'cipher', 'cobalt', 'crane', 'delta', 'drift', 'echo', 'amber',
-  'falcon', 'flint', 'fossil', 'glacier', 'granite', 'harbor', 'horizon', 'indigo', 'island', 'jasper',
-  'lagoon', 'lunar', 'magnet', 'marble', 'matrix', 'meridian', 'meteor', 'nexus', 'noble', 'oasis',
-  'obsidian', 'orbit', 'opal', 'origin', 'phantom', 'phoenix', 'prism', 'pulse', 'pyramid', 'quartz',
-  'radar', 'radius', 'raven', 'ripple', 'ruby', 'safari', 'sapphire', 'saturn', 'shadow', 'shield',
-  'signal', 'silicon', 'solar', 'sonic', 'spectrum', 'sphere', 'summit', 'tactic', 'timber', 'titan',
-  'topaz', 'torpedo', 'trace', 'tropic', 'tundra', 'vector', 'velocity', 'velvet', 'vessel', 'vortex',
-  'whisper', 'zenith', 'astral', 'breeze', 'canyon', 'cascade', 'celestial', 'citadel', 'comet', 'crest',
-  'crystal', 'eclipse', 'ember', 'equinox', 'frontier', 'galaxy', 'haven', 'infinity', 'kinetic', 'lantern',
-  'legacy', 'monolith', 'nebula', 'odyssey', 'pioneer', 'quantum', 'sanctuary', 'solace', 'stellar',
-  'symphony', 'vanguard', 'vista', 'voyage',
-] as const;
 
 export const randomInt = secureRandomInt;
 
@@ -42,7 +31,7 @@ export function generatePassword(options: RandomPasswordOptions = {}): string {
     settings.uppercase ? CHARACTER_SETS.uppercase : '', settings.lowercase ? CHARACTER_SETS.lowercase : '',
     settings.numbers ? CHARACTER_SETS.numbers : '', settings.symbols ? CHARACTER_SETS.symbols : '',
   ].filter(Boolean);
-  if (sets.length === 0) throw new Error('Select at least one character set');
+  if (sets.length === 0) return '';
   if (settings.length < sets.length) throw new RangeError('Password length is shorter than the selected character-set count');
   const result = sets.map(randomChar);
   const pool = sets.join('');
@@ -64,7 +53,7 @@ export function generatePassphrase(options: PassphraseOptions = {}): string {
 }
 
 export function generatePIN(options: PinOptions = {}): string {
-  const length = options.length ?? options.pinLength ?? 6;
+  const length = options.pinLength ?? options.length ?? 6;
   if (!Number.isInteger(length) || length < 1) throw new RangeError('PIN length must be a positive integer');
   return Array.from({ length }, () => randomChar(CHARACTER_SETS.numbers)).join('');
 }

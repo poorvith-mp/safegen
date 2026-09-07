@@ -25,9 +25,9 @@
     --pastel-yellow-bg: #FBF3DB;
     --pastel-yellow-text: #956400;
 
-    --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
-    --font-serif: 'Space Grotesk', sans-serif;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    --font-serif: Georgia, "Times New Roman", serif;
 
     --radius: 8px;
     --motion-factor: 1;
@@ -105,7 +105,6 @@ kbd {
   background-color: var(--surface);
   color: var(--text-main);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
-  display: inline-flex;
   align-items: center;
   justify-content: center;
 }

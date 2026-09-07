@@ -17,9 +17,9 @@ export const StrengthAuditor: React.FC<StrengthAuditorProps> = ({ audit }) => {
     <div className="w-full max-w-4xl mx-auto bg-[var(--surface)] border-crisp rounded-xl p-6 sm:p-8 mt-6">
       <div className="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-6">
         <div>
-          <h3 className="text-lg font-serif italic text-[var(--text-main)]">Security Audit & Analytics</h3>
+          <h3 className="text-lg font-serif italic text-[var(--text-main)]">Strength estimate</h3>
           <p className="text-xs text-[var(--text-muted)]">
-            Cryptographic strength analysis & GPU cluster crack-time estimation
+            Generated search-space and offline crack-time model
           </p>
         </div>
         <div className="text-right">
@@ -32,7 +32,15 @@ export const StrengthAuditor: React.FC<StrengthAuditorProps> = ({ audit }) => {
 
       {/* GSAP Animated Strength Gauge Bar */}
       <div className="mb-8">
-        <div className="h-3 w-full bg-[var(--canvas)] border-crisp rounded-full overflow-hidden p-0.5">
+        <div
+          className="h-3 w-full bg-[var(--canvas)] border-crisp rounded-full overflow-hidden p-0.5"
+          role="meter"
+          aria-label="Estimated credential strength"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={audit.score}
+          aria-valuetext={`${audit.rating}, ${audit.entropy} bits of estimated entropy`}
+        >
           <div
             ref={barRef}
             style={{ width: '0%' }}
@@ -60,19 +68,19 @@ export const StrengthAuditor: React.FC<StrengthAuditorProps> = ({ audit }) => {
         </div>
 
         <div className="p-4 bg-[var(--canvas)] border-crisp rounded-lg">
-          <div className="text-xs font-mono text-[var(--text-muted)] uppercase mb-1">Entropy</div>
+          <div className="text-xs font-mono text-[var(--text-muted)] uppercase mb-1">Estimated entropy</div>
           <div className="text-sm font-sans font-semibold text-[var(--text-main)]">
             {audit.entropy} bits
           </div>
-          <div className="text-[10px] text-[var(--text-subtle)] mt-1">Information density score</div>
+          <div className="text-[10px] text-[var(--text-subtle)] mt-1">Assumes uniform generator choices</div>
         </div>
 
         <div className="p-4 bg-[var(--canvas)] border-crisp rounded-lg">
-          <div className="text-xs font-mono text-[var(--text-muted)] uppercase mb-1">Character Pool</div>
+          <div className="text-xs font-mono text-[var(--text-muted)] uppercase mb-1">Selection Pool</div>
           <div className="text-sm font-sans font-semibold text-[var(--text-main)]">
-            {audit.poolSize} unique chars
+            {audit.poolSize} possible values
           </div>
-          <div className="text-[10px] text-[var(--text-subtle)] mt-1">Total search space size</div>
+          <div className="text-[10px] text-[var(--text-subtle)] mt-1">Per generated position</div>
         </div>
       </div>
 

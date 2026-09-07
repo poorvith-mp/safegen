@@ -23,7 +23,7 @@ export function calculateAudit(password: string, options: PasswordOptions = {}):
   let entropy: number;
   if (options.mode === 'passphrase') {
     const words = options.words ?? options.wordCount ?? password.split(options.separator ?? '-').length;
-    poolSize = 7776; // Standard EFF / Diceware wordlist baseline (12.92 bits per word)
+    poolSize = PASSPHRASE_WORDS.length;
     entropy = words * Math.log2(poolSize) + (options.includeNumber ? Math.log2(words * 100) : 0);
   } else if (options.mode === 'pin') {
     poolSize = 10;
@@ -46,9 +46,7 @@ export function calculateAudit(password: string, options: PasswordOptions = {}):
   if (password.length < 12) warnings.push('Length is under 12 characters');
   if (!hasSymbol && (options.mode ?? 'random') === 'random') warnings.push('No special symbols included');
   if (!hasNumber && (options.mode ?? 'random') === 'random') warnings.push('No numeric digits included');
-  if (entropy >= 80) tips.push('Excellent entropy for high-value accounts');
-  if (options.mode === 'passphrase') tips.push('Passphrases offer high security while remaining easy to type and remember');
-  if ((options.mode ?? 'random') === 'random' && password.length >= 16) tips.push('Resistant to offline dictionary and rainbow table attacks');
+  if (options.mode === 'passphrase') tips.push('Estimate assumes each word was selected uniformly from the bundled EFF list');
   const crackTime = formatCrackTime(timeToCrackSeconds);
   return { entropy, rating, timeToCrackSeconds, crackTime, crackTimeFormatted: crackTime, poolSize, score, warnings, tips };
 }

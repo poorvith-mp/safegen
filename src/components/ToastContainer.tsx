@@ -7,7 +7,7 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-20 right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-20 right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none" aria-live="polite" aria-atomic="false">
       {toasts.map((toast) => {
         let badgeClass = 'badge-green';
 
@@ -20,6 +20,7 @@ export const ToastContainer: React.FC = () => {
         return (
           <div
             key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg border-crisp shadow-sm transition-all animate-in fade-in slide-in-from-bottom-2 duration-200 ${badgeClass}`}
           >
             <span className="text-sm font-sans font-medium">{toast.text}</span>

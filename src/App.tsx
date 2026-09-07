@@ -12,6 +12,7 @@ import type { PasswordOptions, ViewType } from './types';
 import { calculateDetailedAudit, generatePassword } from './utils/generator';
 import { animateViewTransition } from './utils/gsapUtils';
 import { randomInt } from './utils/generator';
+import { copyText } from './utils/clipboard';
 
 const DEFAULT_OPTIONS: PasswordOptions = {
   mode: 'random',
@@ -80,25 +81,27 @@ export function App() {
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Avoid triggering when focused inside inputs or textareas
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
-        return;
-      }
+      if (currentView !== 'generator') return;
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target?.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c' && window.getSelection()?.toString()) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
         handleGenerate();
         showToast('New password generated', 'success');
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
         if (password) {
-          navigator.clipboard.writeText(password);
-          addHistoryItem({
-            password,
-            mode: options.mode,
-            rating: audit.rating,
-            entropy: audit.entropy
-          });
-          showToast('Password copied to clipboard', 'success');
+          void copyText(password).then(() => {
+            addHistoryItem({
+              password,
+              mode: options.mode,
+              rating: audit.rating,
+              entropy: audit.entropy
+            });
+            showToast('Password copied to clipboard', 'success');
+          }).catch(() => showToast('Clipboard permission was denied', 'error'));
         }
       } else if (e.shiftKey && e.key.toLowerCase() === 'r') {
         e.preventDefault();
@@ -108,7 +111,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleGenerate, password, options, audit, addHistoryItem, showToast]);
+  }, [handleGenerate, password, options, audit, addHistoryItem, showToast, currentView]);
 
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--text-main)] selection:text-[var(--surface)]">

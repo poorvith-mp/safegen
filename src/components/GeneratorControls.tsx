@@ -19,10 +19,10 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
     <div className="w-full max-w-4xl mx-auto bg-[var(--surface)] border-crisp rounded-xl p-6 sm:p-8 mt-6">
       {/* Mode Tabs */}
       <div className="mb-6">
-        <label className="block text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] mb-3">
+        <p id="generator-mode-label" className="block text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] mb-3">
           Generator Mode
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 bg-[var(--canvas)] border-crisp rounded-lg">
+        </p>
+        <div role="group" aria-labelledby="generator-mode-label" className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 bg-[var(--canvas)] border-crisp rounded-lg">
           {(
             [
               { id: 'random', label: 'Random', desc: 'High Entropy' },
@@ -35,6 +35,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
               key={mode.id}
               type="button"
               onClick={() => setMode(mode.id)}
+              aria-pressed={options.mode === mode.id}
               className={`px-3 py-2.5 rounded-md text-left transition-all cursor-pointer ${
                 options.mode === mode.id
                   ? 'bg-[var(--surface)] border-crisp text-[var(--text-main)] shadow-2xs font-semibold'
@@ -54,7 +55,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
           {/* Length Slider */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-sans font-medium text-[var(--text-main)]">
+              <label htmlFor="password-length" className="text-sm font-sans font-medium text-[var(--text-main)]">
                 Password Length
               </label>
               <span className="font-mono text-base font-semibold px-2.5 py-0.5 bg-[var(--canvas)] border-crisp rounded-md">
@@ -62,6 +63,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
               </span>
             </div>
             <input
+              id="password-length"
               type="range"
               min="6"
               max="64"
@@ -75,6 +77,9 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
               <span>32</span>
               <span>64</span>
             </div>
+            {!options.uppercase && !options.lowercase && !options.numbers && !options.symbols && (
+              <p role="alert" className="mt-3 text-xs text-rose-700">Choose at least one character set to generate a password.</p>
+            )}
           </div>
 
           {/* Character Sets Toggles */}
@@ -121,7 +126,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
           {/* Word Count Slider */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-sans font-medium text-[var(--text-main)]">
+              <label htmlFor="passphrase-words" className="text-sm font-sans font-medium text-[var(--text-main)]">
                 Number of Words
               </label>
               <span className="font-mono text-base font-semibold px-2.5 py-0.5 bg-[var(--canvas)] border-crisp rounded-md">
@@ -129,6 +134,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
               </span>
             </div>
             <input
+              id="passphrase-words"
               type="range"
               min="3"
               max="8"
@@ -141,10 +147,11 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
           {/* Separator & Toggles */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-mono text-[var(--text-muted)] mb-1">
+              <label htmlFor="word-separator" className="block text-xs font-mono text-[var(--text-muted)] mb-1">
                 Word Separator
               </label>
               <select
+                id="word-separator"
                 value={options.separator}
                 onChange={(e) => updateOption('separator', e.target.value as any)}
                 className="w-full p-2.5 bg-[var(--canvas)] border-crisp rounded-lg font-mono text-sm"
@@ -183,7 +190,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
         <div className="space-y-6">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-sans font-medium text-[var(--text-main)]">
+              <label htmlFor="pin-length" className="text-sm font-sans font-medium text-[var(--text-main)]">
                 PIN Digits Length
               </label>
               <span className="font-mono text-base font-semibold px-2.5 py-0.5 bg-[var(--canvas)] border-crisp rounded-md">
@@ -191,6 +198,7 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
               </span>
             </div>
             <input
+              id="pin-length"
               type="range"
               min="4"
               max="12"
@@ -205,10 +213,11 @@ export const GeneratorControls: React.FC<GeneratorControlsProps> = ({ options, o
       {options.mode === 'pattern' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-mono text-[var(--text-muted)] mb-1">
+            <label htmlFor="credential-pattern" className="block text-xs font-mono text-[var(--text-muted)] mb-1">
               Pattern Definition (L = Letter, n = Number, S = Symbol)
             </label>
             <input
+              id="credential-pattern"
               type="text"
               value={options.pattern}
               onChange={(e) => updateOption('pattern', e.target.value)}

@@ -1,7 +1,7 @@
 {
   "name": "safegen",
   "private": true,
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
   "workspaces": [
     "packages/*"
@@ -9,11 +9,12 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:packages && tsc -p tsconfig.app.json && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
-    "build:packages": "npm run build --workspace @poorvithmp/safegen && npm run build --workspace @poorvithmp/safegen-cli",
+    "build:packages": "node scripts/clean-packages.mjs && npm run build --workspace @poorvithmp/safegen && npm run build --workspace @poorvithmp/safegen-cli",
     "test": "npm run build:packages && node --test tests/*.test.mjs",
-    "lint": "oxlint",
+    "lint": "oxlint src packages tests",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test:browser": "node scripts/browser-smoke.mjs"
   },
   "dependencies": {
     "gsap": "^3.15.0",
@@ -35,7 +36,7 @@
     "typescript": "^5.9.3",
     "vite": "^8.1.1"
   },
-  "description": "<p align=\"center\"><img src=\"docs/assets/logo.svg\" width=\"88\" alt=\"SafeGen logo\"></p>",
+  "description": "Local credential generation and approved agent actions without credential disclosure",
   "main": "postcss.config.js",
   "directories": {
     "doc": "docs",
@@ -47,9 +48,12 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/poorvith-mp/safegen/issues"
   },
-  "homepage": "https://github.com/poorvith-mp/safegen#readme"
+  "homepage": "https://github.com/poorvith-mp/safegen#readme",
+  "engines": {
+    "node": ">=22.13.0"
+  }
 }

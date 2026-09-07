@@ -2,54 +2,49 @@ import { BookOpen, Box, KeyRound, ShieldCheck, Terminal } from 'lucide-react';
 
 const guides = [
   {
-    id: 'package',
-    Icon: Box,
-    label: 'Core package',
-    title: 'Use SafeGen in TypeScript',
-    body: 'Install the zero-dependency generator when your own app needs cryptographic passwords, passphrases, PINs, patterns, or an honest strength estimate.',
-    code: `npm install @poorvithmp/safegen\n\nimport { generatePassword, calculateAudit } from '@poorvithmp/safegen';\n\nconst credential = generatePassword({ length: 20 });\nconsole.log(calculateAudit(credential));`,
+    id: 'broker', Icon: ShieldCheck, label: 'Agent actions', title: 'Keep credentials out of agent context.',
+    body: 'SafeGen runs approved GitHub and Cloudflare actions in a separate local owner process. Your agent receives a request ID and a limited status result. It never receives a provider token or your master password.',
+    code: `Agent requests an action\nYou inspect and approve it locally\nSafeGen authenticates with the intended provider\nAgent receives only the approved status fields`,
   },
   {
-    id: 'cli',
-    Icon: Terminal,
-    label: 'CLI',
-    title: 'Generate from the terminal',
-    body: 'Run the scoped CLI without a global install. Add --audit when you also want the estimated entropy, rating, and crack time.',
-    code: `npx @poorvithmp/safegen-cli generate password --length 20 --uppercase --lowercase --numbers --symbols --audit\nnpx @poorvithmp/safegen-cli generate passphrase --words 4 --separator -\nnpx @poorvithmp/safegen-cli generate pin --length 6`,
+    id: 'setup', Icon: Terminal, label: 'Build from source', title: 'Use the new action broker from this repository.',
+    body: 'CLI 3.0 is a breaking change. npm publication is separate; the older published CLI still returns credentials. Build the current source with Node 22.13 or newer in separate owner and agent installations.',
+    code: `git clone https://github.com/poorvith-mp/safegen.git\ncd safegen\nnpm ci\nnpm run build:packages\nnode packages/cli/dist/index.js --help`,
   },
   {
-    id: 'vault',
-    Icon: KeyRound,
-    label: 'Encrypted vault',
-    title: 'Store credentials locally',
-    body: 'The CLI vault encrypts one local file with AES-256-GCM. Credential values and the master password are collected interactively, never through command arguments.',
-    code: `npx @poorvithmp/safegen-cli vault init\nnpx @poorvithmp/safegen-cli vault save --service github.com --username poorvith\nnpx @poorvithmp/safegen-cli vault list\nnpx @poorvithmp/safegen-cli vault get --service github.com --username poorvith`,
+    id: 'owner', Icon: KeyRound, label: 'Owner setup', title: 'Pin the account and resource before an agent asks.',
+    body: 'Run these commands only in the owner account, with a private browser/login session outside agent control. Connection setup prompts for a scoped provider token locally. The private control-page URL must never enter the agent chat or browser.',
+    code: `node packages/cli/dist/index.js vault init\nnode packages/cli/dist/index.js broker connect --provider github --name work --repository example/project\nnode packages/cli/dist/index.js broker connect --provider cloudflare --name edge --account-id YOUR_ACCOUNT_ID --worker example-worker\nnode packages/cli/dist/index.js broker start --agent-user YOUR_AGENT_OS_USERNAME`,
   },
   {
-    id: 'mcp',
-    Icon: ShieldCheck,
-    label: 'MCP bridge',
-    title: 'Approve agent access explicitly',
-    body: 'Start the stdio server to expose safegen_get_credential. SafeGen asks you to unlock locally and approve each request. The approved value enters the tool context, so connect it only to a trusted MCP host.',
-    code: `npx @poorvithmp/safegen-cli mcp\n\n# Claude Code\nclaude mcp add safegen -- npx @poorvithmp/safegen-cli mcp`,
+    id: 'mcp', Icon: Terminal, label: 'CLI and MCP', title: 'Request actions. Inspect each approval.',
+    body: 'The agent can read a workflow run status, rerun an existing workflow, list Worker deployments, or request deployment of an existing immutable Worker version. Every request needs fresh local approval and expires after two minutes.',
+    code: `node packages/cli/dist/index.js action connections\nnode packages/cli/dist/index.js action request --connection work --action github.run-status --run-id 123456\nnode packages/cli/dist/index.js action status REQUEST_ID\nnode packages/cli/dist/index.js mcp --broker http://127.0.0.1:4767\n\nMCP tools:\nsafegen_list_connections\nsafegen_request_action\nsafegen_action_status`,
+  },
+  {
+    id: 'vault', Icon: KeyRound, label: 'Vault maintenance', title: 'Back up encrypted data and rotate passwords.',
+    body: 'The owner vault uses AES-256-GCM and PBKDF2-HMAC-SHA256. Stop the broker before maintenance. Restoring a backup requires its original master password, and rotating the live vault does not change old backups. The owner page can lock the vault and revoke pending actions.',
+    code: `node packages/cli/dist/index.js vault backup --path PRIVATE_BACKUP_PATH\nnode packages/cli/dist/index.js vault rotate-password\nnode packages/cli/dist/index.js vault restore --path PRIVATE_BACKUP_PATH`,
+  },
+  {
+    id: 'package', Icon: Box, label: 'Generator core', title: 'Generate locally in TypeScript.',
+    body: 'The browser and core package still generate passwords, passphrases, PINs and patterns with native cryptographic randomness. Passphrase estimates use the bundled wordlist. Arbitrary-password strength is a heuristic, not a guarantee.',
+    code: `import { generatePassword, calculateAudit } from '@poorvithmp/safegen';\n\nconst options = { mode: 'random' as const, length: 20 };\nconst value = generatePassword(options);\nconst estimate = calculateAudit(value, options);`,
   },
 ];
 
 export function DocumentationHub() {
   return <section aria-labelledby="docs-title" className="safe-docs">
     <header className="safe-docs-hero">
-      <p><BookOpen size={16} /> Installation & docs</p>
-      <h1 id="docs-title">Use SafeGen where the credential work happens.</h1>
-      <span>The browser generator needs no setup. The package, CLI, encrypted vault, and MCP bridge are separate surfaces with different trust boundaries.</span>
+      <p><BookOpen size={16} /> SafeGen guides</p>
+      <h1 id="docs-title">Let agents use your accounts without receiving your credentials.</h1>
+      <span>The public website is a local generator. The owner broker runs on your device under a separate OS account.</span>
     </header>
     <nav aria-label="Documentation sections" className="safe-docs-jumps">{guides.map(({ id, label }) => <a key={id} href={`#docs-${id}`}>{label}</a>)}</nav>
     <div className="safe-docs-grid">{guides.map(({ id, Icon, label, title, body, code }, index) => <article id={`docs-${id}`} key={id} className="safe-doc-card">
       <div className="safe-doc-card-heading"><span>{String(index + 1).padStart(2, '0')}</span><Icon size={20} /></div>
-      <p>{label}</p>
-      <h2>{title}</h2>
-      <div className="safe-doc-copy">{body}</div>
-      <pre><code>{code}</code></pre>
+      <p>{label}</p><h2>{title}</h2><div className="safe-doc-copy">{body}</div><pre><code>{code}</code></pre>
     </article>)}</div>
-    <aside className="safe-doc-boundary"><ShieldCheck size={21} /><div><strong>Know the boundary.</strong><p>Browser history is localStorage and is not encrypted. The CLI vault is encrypted at rest. An MCP-approved credential is visible to the trusted agent host that receives it.</p></div></aside>
+    <aside className="safe-doc-boundary"><ShieldCheck size={21} /><div><strong>The isolation boundary matters.</strong><p>The agent must not control the owner account, browser, code or process memory. Administrator/root access and a compromised owner environment are outside this boundary. Startup checks cover basic account/file permissions, not the whole machine. Approved nonsecret results can reach the model provider. Browser history is separate and plaintext only when persistence is enabled.</p><a href="https://github.com/poorvith-mp/safegen/blob/main/docs/isolation.md">Read the owner isolation and setup guide</a></div></aside>
   </section>;
 }

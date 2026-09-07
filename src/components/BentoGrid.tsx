@@ -15,10 +15,10 @@ export const BentoGrid: React.FC = () => {
     <section className="w-full max-w-4xl mx-auto mt-16 mb-24 px-2">
       <div className="text-center mb-10">
         <h2 className="text-2xl sm:text-3xl font-serif italic text-[var(--text-main)] mb-2">
-          Engineered for Utilitarian Security
+            Local tools with explicit boundaries
         </h2>
         <p className="text-xs font-mono text-[var(--text-muted)] max-w-md mx-auto">
-          Minimalist design principles combined with uncompromising browser-native cryptographic safety.
+          Generate credentials in your browser, or let an owner-controlled broker perform narrow account actions for agents.
         </p>
       </div>
 
@@ -29,11 +29,11 @@ export const BentoGrid: React.FC = () => {
             01
           </div>
           <h3 className="text-lg font-sans font-semibold text-[var(--text-main)] mb-2">
-            100% Offline & Zero Telemetry
+            Browser-local generation
           </h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-            All passwords, passphrases, and PINs are computed using the browser’s native{' '}
-            <code className="font-mono text-[11px]">window.crypto.getRandomValues</code> API. Your generated keys never touch a remote server or analytics engine.
+            Passwords, passphrases, and PINs use the browser’s native{' '}
+            <code className="font-mono text-[11px]">crypto.getRandomValues</code> API. SafeGen does not send generated values to a server or analytics service.
           </p>
         </div>
 
@@ -43,10 +43,10 @@ export const BentoGrid: React.FC = () => {
             02
           </div>
           <h3 className="text-base font-sans font-semibold text-[var(--text-main)] mb-2">
-            High-Entropy Mathematics
+            Transparent estimates
           </h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-            Measures exact entropy bits using <code className="font-mono text-[11px]">E = L × log₂(N)</code>. Calculates real-time time-to-crack values against 100B guess/sec GPU clusters.
+            Shows a generated search-space estimate using <code className="font-mono text-[11px]">E = L × log₂(N)</code> and a stated 100B guesses-per-second model. These figures are estimates, not guarantees.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export const BentoGrid: React.FC = () => {
             Diceware Passphrases
           </h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-            Uses curated wordlists to form memorable human-friendly passphrases with custom separators and capitalization.
+            Selects uniformly from EFF’s 7,776-word long list, bundled locally under CC BY 3.0 US, with custom separators and capitalization.
           </p>
         </div>
 
@@ -70,17 +70,14 @@ export const BentoGrid: React.FC = () => {
               04
             </div>
             <h3 className="text-lg font-sans font-semibold text-[var(--text-main)] mb-2">
-              Physical Micro-UIs & Hotkeys
+              Agent actions without shared credentials
             </h3>
             <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
-              Control the generator without touching your mouse using physical hardware keystrokes.
+              The local action broker keeps provider credentials outside the agent boundary. Each fixed GitHub or Cloudflare action needs fresh owner approval before the broker performs it.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border)]">
-            <span className="text-[10px] font-mono text-[var(--text-subtle)]">Shortcuts:</span>
-            <kbd>Space</kbd> <span className="text-[11px] text-[var(--text-muted)]">Generate</span>
-            <kbd>⌘C</kbd> <span className="text-[11px] text-[var(--text-muted)]">Copy</span>
-            <kbd>Shift+R</kbd> <span className="text-[11px] text-[var(--text-muted)]">Surprise</span>
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]">
+            Deployment requires a separate OS user for real isolation; same-user mode is for synthetic development only.
           </div>
         </div>
       </div>

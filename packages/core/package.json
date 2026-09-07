@@ -1,15 +1,30 @@
 {
   "name": "@poorvithmp/safegen",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Typed, zero-dependency credential generation and auditing for browsers and Node.js.",
   "author": "Poorvith M P",
   "homepage": "https://safegen.poorvithmp.com",
-  "repository": { "type": "git", "url": "git+https://github.com/poorvith-mp/safegen.git", "directory": "packages/core" },
-  "bugs": { "url": "https://github.com/poorvith-mp/safegen/issues" },
-  "keywords": ["password", "passphrase", "credentials", "cryptography", "typescript"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poorvith-mp/safegen.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/poorvith-mp/safegen/issues"
+  },
+  "keywords": [
+    "password",
+    "passphrase",
+    "credentials",
+    "cryptography",
+    "typescript"
+  ],
   "type": "module",
   "sideEffects": false,
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -29,3 +29,12 @@ test('CLI audit output includes rating, entropy, and crack time', () => {
   assert.match(result.stdout, /Entropy:/);
   assert.match(result.stdout, /Crack time:/);
 });
+
+test('CLI rejects ineffective self-destruct and unsafe broker startup', () => {
+  const ephemeral = run(['generate', 'pin', '--ephemeral', '60']);
+  assert.notEqual(ephemeral.status, 0);
+  assert.equal(ephemeral.stdout, '');
+  const startup = run(['broker', 'start', '--agent-user', 'invalid/identity']);
+  assert.notEqual(startup.status, 0);
+  assert.match(startup.stderr, /separate|different|isolat/i);
+});

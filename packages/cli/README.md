@@ -1,102 +1,41 @@
-# @poorvithmp/safegen-cli
+# @poorvithmp/safegen-cli 3.0
 
-> Terminal credential generator, AES-256-GCM encrypted local vault, and approval-gated MCP bridge.
+I replaced SafeGen's credential-returning MCP tool with a local action broker. Agents can request a GitHub workflow action or Cloudflare Worker deployment; the owner approves it privately and SafeGen authenticates directly.
 
-[![npm version](https://img.shields.io/npm/v/@poorvithmp/safegen-cli.svg)](https://www.npmjs.com/package/@poorvithmp/safegen-cli)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
-SafeGen CLI is a command-line tool and local credential vault. It also includes a Model Context Protocol (MCP) server that lets AI agents request credentials with mandatory user approval.
-
----
-
-## Installation & Running
-
-Run directly via `npx` without installing globally:
-
-```bash
-npx @poorvithmp/safegen-cli --help
-```
-
-Or install globally:
-
-```bash
-npm install -g @poorvithmp/safegen-cli
-safegen --help
-```
-
----
+This revision is available from source. npm publication is separate, and CLI v2 does not enforce the new action boundary. Requires Node 22.13+. Follow [owner isolation setup](../../docs/isolation.md) before storing real credentials.
 
 ## Commands
 
-### 1. Generate Credentials
+Run `node packages/cli/dist/index.js` from a built checkout, followed by:
 
-Generate passwords, passphrases, PINs, and patterns directly in the terminal:
+| Command | Purpose |
+| --- | --- |
+| `generate password --length 24 --audit` | Generate locally and print a password |
+| `generate passphrase --words 5` | Generate from the bundled EFF wordlist |
+| `generate pin --length 6` | Generate a numeric PIN |
+| `generate pattern --template LLnn-SSll` | Fill a pattern |
+| `vault init` | Create an encrypted vault without overwriting one |
+| `vault save --service SERVICE --username NAME` | Owner-only masked credential input |
+| `vault list` | Owner-only account metadata |
+| `vault delete --service SERVICE --username NAME` | Confirm removal of an entry |
+| `vault rotate-password` | Re-encrypt using a new master password |
+| `vault backup --path PATH` | Write a verified encrypted backup |
+| `vault restore --path PATH` | Validate and restore encrypted data |
+| `broker connect --provider github --name work --repository example/project` | Pin a GitHub account connection |
+| `broker connect --provider cloudflare --name edge --account-id ID --worker NAME` | Pin a Cloudflare account connection |
+| `broker start --agent-user USERNAME` | Start the owner process after isolation checks |
+| `action connections` | List aliases available to the agent |
+| `action request --connection work --action github.run-status --run-id 123` | Request a workflow status read |
+| `action request --connection work --action github.rerun --run-id 123` | Request a workflow rerun |
+| `action request --connection edge --action cloudflare.deployments` | Request recent deployments |
+| `action request --connection edge --action cloudflare.deploy-version --version-id UUID` | Request deployment of an existing Worker version |
+| `action status REQUEST_ID` | Read the bounded result after owner approval |
+| `mcp --broker http://127.0.0.1:4767` | Start the agent-facing stdio client |
 
-```bash
-# Password with custom length and character sets
-npx @poorvithmp/safegen-cli generate password --length 24 --uppercase --lowercase --numbers --symbols --audit
+`vault get` is disabled. `--ephemeral` was removed because clearing a buffer cannot retract a printed secret. Generation commands intentionally print newly generated values; never use their stdout to provision credentials that must remain outside agent context. Use owner-only masked setup for provider tokens.
 
-# Passphrase
-npx @poorvithmp/safegen-cli generate passphrase --words 5 --separator - --capitalize --include-number
+The MCP tools are `safegen_list_connections`, `safegen_request_action`, and `safegen_action_status`. There is no credential, unlock, approve or arbitrary HTTP tool. MCP results may reach the host's model provider, but contain only approved status fields.
 
-# Numeric PIN
-npx @poorvithmp/safegen-cli generate pin --length 8
+Vault encryption uses AES-256-GCM with a random 16-byte salt and 12-byte IV per write, PBKDF2-HMAC-SHA256 at 600,000 iterations, and no recovery mechanism for a lost master password. Backups stay encrypted. Store them privately and remember that changing the live password does not change older backups.
 
-# Pattern Template (L=uppercase, l=lowercase, n=number, s=symbol)
-npx @poorvithmp/safegen-cli generate pattern -t "Lnnn-Lnnn-S"
-```
-
-Adding `--audit` outputs entropy bits, strength rating, and estimated crack time.
-
----
-
-### 2. Encrypted Local Vault
-
-SafeGen includes a secure local vault stored at `~/.safegen/vault.enc`.
-
-- **Encryption**: AES-256-GCM with a unique 32-byte salt and 12-byte IV per write.
-- **Key Derivation**: PBKDF2-HMAC-SHA256 with 600,000 iterations.
-- **Privacy**: Secrets and master passwords are provided interactively via masked prompts and are never accepted as command-line arguments.
-
-```bash
-# Initialize a new vault
-npx @poorvithmp/safegen-cli vault init
-
-# Save a credential
-npx @poorvithmp/safegen-cli vault save --service github.com --username poorvith
-
-# List saved services
-npx @poorvithmp/safegen-cli vault list
-
-# Retrieve a credential
-npx @poorvithmp/safegen-cli vault get --service github.com --username poorvith
-
-# Delete a credential
-npx @poorvithmp/safegen-cli vault delete --service github.com --username poorvith
-```
-
----
-
-### 3. MCP Credential Bridge (AI Agent Integration)
-
-Connect your local vault to AI agent platforms (such as Claude Code, Cursor, Antigravity, or any MCP client):
-
-```bash
-npx @poorvithmp/safegen-cli mcp
-```
-
-#### Configuring with Claude Code:
-```bash
-claude mcp add safegen -- npx @poorvithmp/safegen-cli mcp
-```
-
-#### Security & Approval Boundary:
-- The MCP server exposes the `safegen_get_credential` tool.
-- When an AI agent invokes the tool, SafeGen requires explicit human approval before unlocking the vault.
-- All requests are logged in `~/.safegen/access.log` with timestamp and service name (never credential plaintext).
-
----
-
-## License
-
-MIT © [Poorvith M P](https://poorvithmp.com)
+MIT. [Poorvith M P](https://poorvithmp.com).

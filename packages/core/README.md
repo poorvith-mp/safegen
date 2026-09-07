@@ -1,134 +1,42 @@
 # @poorvithmp/safegen
 
-> Typed, zero-dependency credential generation and entropy auditing for browsers and Node.js.
+Credential generation and generation-strength estimates for browsers and Node 20+. The core has no runtime dependencies and uses Web Crypto with rejection sampling. It does not make network requests or store generated values.
 
-[![npm version](https://img.shields.io/npm/v/@poorvithmp/safegen.svg)](https://www.npmjs.com/package/@poorvithmp/safegen)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
-SafeGen is built on cryptographic primitives using `globalThis.crypto.getRandomValues` with rejection sampling. It has zero dependencies, works in modern browsers and Node.js (>=20), and never falls back to predictable random generators like `Math.random`.
-
----
-
-## Installation
-
-```bash
-npm install @poorvithmp/safegen
-```
-
-Or via CDN (ES modules):
-
-```html
-<script type="module">
-  import { generatePassword, calculateAudit } from 'https://esm.sh/@poorvithmp/safegen';
-</script>
-```
-
----
-
-## Quick Start
+This checkout contains version 2.1.0. npm publication is separate; build this revision from the repository root with `npm ci` and `npm run build:packages`.
 
 ```ts
 import {
-  generatePassword,
-  generatePassphrase,
-  generatePIN,
-  generatePattern,
-  calculateAudit
+  generatePassword, generatePassphrase, generatePIN,
+  generatePattern, generateCredential, calculateAudit,
 } from '@poorvithmp/safegen';
 
-// 1. Cryptographic Random Password
-const password = generatePassword({
-  length: 20,
-  uppercase: true,
-  lowercase: true,
-  numbers: true,
-  symbols: true,
-});
-
-// 2. Memorable Passphrase
-const passphrase = generatePassphrase({
-  words: 4,
-  separator: '-',
-  capitalize: true,
-  includeNumber: true,
-});
-
-// 3. Numeric PIN
-const pin = generatePIN({ length: 6 });
-
-// 4. Custom Pattern Token
-const pattern = generatePattern({ template: 'Lnnn-Lnnn-S' });
-
-// 5. Security Audit & Entropy Estimation
-const audit = calculateAudit(password);
-console.log(audit);
+const password = generatePassword({ length: 20 });
+const options = { mode: 'passphrase' as const, words: 5, separator: '-' };
+const phrase = generateCredential(options);
+const audit = calculateAudit(phrase, options);
+const pin = generatePIN({ pinLength: 6 });
+const token = generatePattern({ template: 'Lnnn-Lnnn-S' });
 ```
 
----
+| Function | Options and defaults |
+| --- | --- |
+| `generatePassword` / `generateRandomPassword` | `length: 16`; `uppercase`, `lowercase`, `numbers`, `symbols` all true. At least one character from each enabled set. Returns an empty string when all sets are disabled; rejects a length shorter than the set count. |
+| `generatePassphrase` | `words` / `wordCount: 4`; `separator: '-'`; `capitalize: false`; `includeNumber: false`. Number mode appends a random integer from 0 through 99 to a random word. |
+| `generatePIN` | `pinLength` takes precedence over `length`; default 6 digits. |
+| `generatePattern` | `template` / `pattern: 'Lnnn-Lnnn-S'`. `L` uppercase, `l` lowercase, `n` digit, `S`/`s` symbol; other characters are literal. |
+| `generateCredential` | Routes by `mode`: `random`, `passphrase`, `pin` or `pattern`. |
+| `calculateAudit` / `calculateDetailedAudit` | Accept the generated value and the same generator options. Returns entropy, rating, score, pool size, warnings, tips and a hypothetical cracking-time estimate. |
 
-## API Reference
+Lengths and word counts must be positive integers. Randomness failure is an error; there is no fallback to `Math.random`.
 
-### `generatePassword(options?: RandomPasswordOptions): string`
-Generates a random password from selected character sets with rejection sampling.
-- `length` *(number, default: 16)*: Total password length.
-- `uppercase` *(boolean, default: true)*: Include `A-Z`.
-- `lowercase` *(boolean, default: true)*: Include `a-z`.
-- `numbers` *(boolean, default: true)*: Include `0-9`.
-- `symbols` *(boolean, default: true)*: Include `!@#$%^&*()_+{}[]<>?/|~=-`.
+## Interpreting an audit
 
-*(Alias: `generateRandomPassword`)*
+Passphrase entropy is based on the bundled 7,776-word vocabulary (about 12.92 bits per independent word). Fixed capitalization and separators add no entropy. Random number mode adds the number and position choices. PIN and pattern estimates use their respective character pools; literal pattern characters add no entropy.
 
-### `generatePassphrase(options?: PassphraseOptions): string`
-Generates a passphrase from a curated list of non-offensive words.
-- `words` / `wordCount` *(number, default: 4)*: Number of words.
-- `separator` *(string, default: '-')*: Delimiter between words.
-- `capitalize` *(boolean, default: false)*: Capitalize each word.
-- `includeNumber` *(boolean, default: false)*: Append a random number to a random word.
+The random-password estimate uses the character classes present in the supplied value. It is a heuristic, not an exact measurement of the constrained generator's distribution, and cannot establish the strength of a human-chosen password. Always pass the generation options for passphrases and patterns.
 
-### `generatePIN(options?: PinOptions): string`
-Generates a numeric PIN.
-- `length` / `pinLength` *(number, default: 6)*: Number of digits.
+`score` is on a 0–100 scale. `rating` is `Weak`, `Medium`, `Strong` or `Very strong`. `timeToCrackSeconds` is half the estimated search space at 100 billion guesses per second; `crackTime` and `crackTimeFormatted` describe that same assumption. Actual attack rates depend on password hashing, hardware and rate limits. This is not a safety guarantee.
 
-### `generatePattern(options?: PatternOptions): string`
-Generates a credential matching a token template:
-- `L`: Uppercase character (`A-Z`)
-- `l`: Lowercase character (`a-z`)
-- `n`: Number (`0-9`)
-- `S` / `s`: Symbol
-- *Any other character*: Preserved literally (e.g. hyphens, colons).
-- `template` / `pattern` *(string, default: 'Lnnn-Lnnn-S')*.
+## Wordlist and license
 
-### `generateCredential(options: PasswordOptions): string`
-Unified entry point that routes to the correct generator based on `options.mode` (`'random' | 'passphrase' | 'pin' | 'pattern'`).
-
-### `calculateAudit(password: string, options?: PasswordOptions): SecurityAudit`
-Evaluates the entropy, estimated cracking time, strength rating, and gives security tips.
-
-#### `SecurityAudit` Output Object:
-```ts
-interface SecurityAudit {
-  entropy: number;            // Entropy in bits (e.g. 128.5)
-  rating: StrengthRating;    // 'Very strong' | 'Strong' | 'Medium' | 'Weak'
-  timeToCrackSeconds: number; // Raw seconds estimate at 10^10 hashes/sec
-  crackTime: string;          // Human-readable formatted string (e.g. "142 million years")
-  crackTimeFormatted: string; // Alias for crackTime
-  poolSize: number;           // Calculated character pool size
-  score: number;              // 0 to 4 score
-  warnings: string[];         // Explanations of vulnerabilities or weaknesses
-  tips: string[];             // Recommendations for increasing resilience
-}
-```
-
----
-
-## Cryptographic Guarantees
-
-1. **Rejection Sampling**: Avoids modulo bias when mapping cryptographic random bytes to character pool indices.
-2. **Native Web Crypto**: Uses `crypto.getRandomValues` across both Node.js (v20+) and modern browsers.
-3. **Zero Telemetry**: Passwords and keys are generated strictly in memory and are never transmitted across a network.
-
----
-
-## License
-
-MIT © [Poorvith M P](https://poorvithmp.com)
+Passphrases use the [EFF Large Wordlist](https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt), copyright Electronic Frontier Foundation, under [CC BY 3.0 US](https://creativecommons.org/licenses/by/3.0/us/). The source's dice labels are omitted from the generated TypeScript array; the words are preserved. The rest of SafeGen is MIT licensed.

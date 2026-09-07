@@ -6,37 +6,21 @@ gsap.defaults({
   ease: 'power2.out'
 });
 
+const reduceMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
 /**
  * Animate view entrance transition with subtle fade & slide up
  */
 export function animateViewTransition(target: HTMLElement | null) {
   if (!target) return;
-
-  const mm = gsap.matchMedia();
-  mm.add(
-    {
-      reduceMotion: '(prefers-reduced-motion: reduce)',
-      defaultMotion: '(prefers-reduced-motion: no-preference)'
-    },
-    (context) => {
-      const { reduceMotion } = context.conditions!;
-
-      gsap.fromTo(
-        target,
-        {
-          autoAlpha: 0,
-          y: reduceMotion ? 0 : 12
-        },
-        {
-          autoAlpha: 1,
-          y: 0,
-          duration: reduceMotion ? 0.1 : 0.45,
-          ease: 'power2.out',
-          clearProps: 'transform'
-        }
-      );
-    }
-  );
+  if (reduceMotion()) return;
+  gsap.fromTo(target, { autoAlpha: 0, y: 12 }, {
+    autoAlpha: 1,
+    y: 0,
+    duration: 0.45,
+    ease: 'power2.out',
+    clearProps: 'transform'
+  });
 }
 
 /**
@@ -45,8 +29,14 @@ export function animateViewTransition(target: HTMLElement | null) {
 export function animateEntropyGauge(target: HTMLElement | null, targetWidthPercent: number) {
   if (!target) return;
 
+  const width = `${Math.min(100, Math.max(0, targetWidthPercent))}%`;
+  if (reduceMotion()) {
+    gsap.set(target, { width });
+    return;
+  }
+
   gsap.to(target, {
-    width: `${Math.min(100, Math.max(0, targetWidthPercent))}%`,
+    width,
     duration: 0.5,
     ease: 'power2.out'
   });
@@ -57,6 +47,7 @@ export function animateEntropyGauge(target: HTMLElement | null, targetWidthPerce
  */
 export function animateCopyBurst(target: HTMLElement | null) {
   if (!target) return;
+  if (reduceMotion()) return;
 
   gsap.fromTo(
     target,
@@ -75,33 +66,15 @@ export function animateCopyBurst(target: HTMLElement | null) {
  */
 export function animateBentoStagger(targets: HTMLElement[] | NodeListOf<Element> | string) {
   if (!targets) return;
-
-  const mm = gsap.matchMedia();
-  mm.add(
-    {
-      reduceMotion: '(prefers-reduced-motion: reduce)',
-      defaultMotion: '(prefers-reduced-motion: no-preference)'
-    },
-    (context) => {
-      const { reduceMotion } = context.conditions!;
-
-      gsap.fromTo(
-        targets,
-        {
-          autoAlpha: 0,
-          y: reduceMotion ? 0 : 18
-        },
-        {
-          autoAlpha: 1,
-          y: 0,
-          stagger: reduceMotion ? 0 : 0.08,
-          duration: reduceMotion ? 0.1 : 0.5,
-          ease: 'power2.out',
-          clearProps: 'transform'
-        }
-      );
-    }
-  );
+  if (reduceMotion()) return;
+  gsap.fromTo(targets, { autoAlpha: 0, y: 18 }, {
+    autoAlpha: 1,
+    y: 0,
+    stagger: 0.08,
+    duration: 0.5,
+    ease: 'power2.out',
+    clearProps: 'transform'
+  });
 }
 
 /**
@@ -109,6 +82,7 @@ export function animateBentoStagger(targets: HTMLElement[] | NodeListOf<Element>
  */
 export function animatePasswordRefresh(target: HTMLElement | null) {
   if (!target) return;
+  if (reduceMotion()) return;
 
   gsap.fromTo(
     target,

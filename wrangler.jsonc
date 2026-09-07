@@ -3,7 +3,7 @@
   "name": "safegen",
   "compatibility_date": "2026-08-16",
   "build": {
-    "command": "npm run build"
+    "command": "npm test && npm run lint && npm run build"
   },
   "observability": {
     "enabled": true
