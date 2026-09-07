@@ -107,11 +107,11 @@ try {
   assert.deepEqual(unauthorized, []);
   console.log('Browser smoke passed: four modes, empty selection, keyboard copy, opt-in history, corrupt storage, clipboard denial, first-visit offline reload, mobile layout, zero page errors and zero unauthorized network requests.');
 } catch (error) {
-  console.error('Overflow elements:', await page.evaluate(() => [...document.querySelectorAll('*')].filter(element => element.getBoundingClientRect().right > innerWidth + 1).map(element => ({ tag: element.tagName, class: element.className, width: element.getBoundingClientRect().width })).slice(0, 12)));
+  console.error('Overflow elements:', await page.evaluate(() => [...document.querySelectorAll('*')].filter(element => element.getBoundingClientRect().right > innerWidth + 1).map(element => ({ tag: element.tagName, class: element.className, width: element.getBoundingClientRect().width })).slice(0, 12)).catch(() => []));
   console.error('Browser errors:', errors);
   console.error('Console errors:', consoleErrors);
   console.error('Failed requests:', failedRequests);
-  console.error('Page title:', await page.title());
+  console.error('Page title:', await page.title().catch(() => 'Navigation did not finish'));
   console.error('Cached assets:', await page.evaluate(async () => (await Promise.all((await caches.keys()).map(async key => {
     const cache = await caches.open(key);
     return Promise.all((await cache.keys()).map(async request => ({ path: new URL(request.url).pathname, vary: (await cache.match(request))?.headers.get('vary') })));

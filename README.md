@@ -62,6 +62,8 @@ npm run dev
 
 Cloudflare Workers serves the static website through the existing Git integration. Build checks run tests and lint before producing assets. Only the public generator is deployed; vaults and the broker remain on the owner's machine. Native static-asset headers enforce the website's content and framing policy.
 
+The response policy also uses `no-transform` to prevent Cloudflare's automatic Web Analytics injection, as described in its [Web Analytics FAQ](https://developers.cloudflare.com/web-analytics/faq/). Offline caching fetches the canonical root page because Cloudflare redirects `/index.html`.
+
 The generator core has no runtime dependencies. The broker reuses Node built-ins and the existing MCP SDK, Commander, Inquirer and Zod. Contributions that change secret handling need regression tests and a clear statement of the affected trust boundary.
 
 MIT. Built by [Poorvith M P](https://poorvithmp.com). The EFF wordlist has its own attribution in the core package.

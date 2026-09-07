@@ -1,13 +1,15 @@
 const CACHE_PREFIX = 'safegen-app-';
-const CACHE_NAME = `${CACHE_PREFIX}v3`;
-const APP_SHELL = ['/', '/index.html', '/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/logo-mark.svg'];
+const CACHE_NAME = `${CACHE_PREFIX}v3-1`;
+const APP_SHELL = ['/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/logo-mark.svg'];
 const STATIC_ASSET = /^\/assets\/[^/]+\.(?:css|js|svg|png|webp|woff2?)$/;
 
 async function installAppShell() {
   const cache = await caches.open(CACHE_NAME);
   await cache.addAll(APP_SHELL);
-  const index = await fetch('/index.html', { cache: 'no-store' });
-  if (!index.ok) return;
+  // Cloudflare redirects /index.html to /. A redirected cached response cannot serve an offline navigation.
+  const index = await fetch('/', { cache: 'no-store', redirect: 'error' });
+  if (!index.ok) throw new Error('App shell unavailable');
+  await cache.put('/index.html', index.clone());
   const html = await index.text();
   const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"?]+)"/g)]
     .map((match) => match[1])

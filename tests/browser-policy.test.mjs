@@ -110,11 +110,14 @@ test('service worker ignores credentials and cross-origin requests while caching
 
   const listeners = {};
   const addedAssets = [];
+  const cachedPages = [];
   const context = {
     URL,
-    fetch: async (request) => {
+    fetch: async (request, options) => {
       const url = typeof request === 'string' ? request : request.url;
-      if (url.endsWith('/index.html')) {
+      assert.notEqual(url, '/index.html', 'The host redirects this URL, so it cannot be the precached navigation response');
+      if (url === '/') {
+        assert.equal(options.redirect, 'error');
         return new Response('<script src="/assets/app.js"></script><link href="/assets/app.css"><script src="https://tracker.example/x.js"></script>');
       }
       return new Response('asset');
@@ -122,7 +125,7 @@ test('service worker ignores credentials and cross-origin requests while caching
     caches: {
       open: async () => ({
         match: async (_request, options) => options?.ignoreVary ? new Response('cached asset') : undefined,
-        put: async () => undefined,
+        put: async (key, response) => { cachedPages.push({ key, redirected: response.redirected }); },
         addAll: async (assets) => { addedAssets.push(...assets); },
       }),
       keys: async () => [],
@@ -142,6 +145,7 @@ test('service worker ignores credentials and cross-origin requests while caching
   let installWork;
   listeners.install({ waitUntil: (promise) => { installWork = promise; } });
   await installWork;
+  assert.deepEqual(cachedPages, [{ key: '/index.html', redirected: false }]);
   assert.ok(addedAssets.includes('/assets/app.js'));
   assert.ok(addedAssets.includes('/assets/app.css'));
   assert.equal(addedAssets.some((asset) => asset.startsWith('https://')), false);
