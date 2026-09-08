@@ -111,6 +111,7 @@ test('service worker ignores credentials and cross-origin requests while caching
   const listeners = {};
   const addedAssets = [];
   const cachedPages = [];
+  let redirectedNavigation = false;
   const context = {
     URL,
     fetch: async (request, options) => {
@@ -120,7 +121,9 @@ test('service worker ignores credentials and cross-origin requests while caching
         assert.equal(options.redirect, 'error');
         return new Response('<script src="/assets/app.js"></script><link href="/assets/app.css"><script src="https://tracker.example/x.js"></script>');
       }
-      return new Response('asset');
+      const response = new Response('asset');
+      if (redirectedNavigation) Object.defineProperty(response, 'redirected', { value: true });
+      return response;
     },
     caches: {
       open: async () => ({
@@ -171,4 +174,13 @@ test('service worker ignores credentials and cross-origin requests while caching
   Object.defineProperty(shellImageRequest, 'destination', { value: 'image' });
   listeners.fetch({ request: shellImageRequest, respondWith: () => { handledShellImage = true; } });
   assert.equal(handledShellImage, true);
+
+  // A redirected deep link must not replace the usable offline navigation response.
+  redirectedNavigation = true;
+  const navigation = new Request('https://safegen.example/index.html');
+  Object.defineProperty(navigation, 'mode', { value: 'navigate' });
+  let navigationResponse;
+  listeners.fetch({ request: navigation, respondWith: (response) => { navigationResponse = response; } });
+  await navigationResponse;
+  assert.equal(cachedPages.length, 1);
 });

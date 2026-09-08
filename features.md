@@ -1,6 +1,6 @@
 # SafeGen feature scope
 
-The current product model lets an agent request an action without receiving the credential used to perform it. The former v2 credential-returning MCP design is superseded by the [approved broker design](docs/superpowers/specs/2026-09-06-local-action-broker-design.md).
+The current product model lets an agent request an action without receiving the credential used to perform it. The former v2 credential-returning MCP design is superseded by the [action broker architecture](docs/architecture.md).
 
 ## Delivered in this revision
 

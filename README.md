@@ -1,8 +1,25 @@
+<p align="center"><img src="docs/assets/logo.svg" width="80" height="80" alt="SafeGen logo" /></p>
+
 # SafeGen
 
-SafeGen lets agents request account actions without receiving your credentials. I changed the original credential-returning MCP bridge because approval alone doesn't keep a token out of model context.
+**Useful agents. Credentials that stay under your control.**
 
-[Open the browser generator](https://safegen.poorvithmp.com) · [Owner isolation setup](docs/isolation.md) · [CLI guide](packages/cli/README.md) · [Core API](packages/core/README.md)
+SafeGen lets agents request approved GitHub and Cloudflare actions without receiving the provider credentials used to perform them. It also includes a browser-local password generator and a TypeScript generation library.
+
+[Website](https://safegen.poorvithmp.com) · [Try the generator](https://safegen.poorvithmp.com/generator) · [Connect your agent](https://safegen.poorvithmp.com/setup) · [Documentation](https://safegen.poorvithmp.com/docs)
+
+![SafeGen landing page showing agent requests, owner approval and provider actions](docs/assets/landing.png)
+
+## Choose your starting point
+
+| You want to… | Start here |
+| --- | --- |
+| Generate a password, passphrase, PIN or pattern | [Browser generator](https://safegen.poorvithmp.com/generator), no account needed |
+| Set up Codex, Claude Code or Cursor | [Getting started](docs/getting-started.md) and the [interactive setup guide](https://safegen.poorvithmp.com/setup) |
+| Prepare the private owner environment | [Owner isolation](docs/isolation.md) |
+| Understand or extend the code | [Architecture](docs/architecture.md), [maintenance](docs/maintenance.md), [CLI](packages/cli/README.md), [core API](packages/core/README.md) |
+
+The mission is to make credential access an explicit, reviewable action. A prompt asking an AI to keep a token private is not an isolation boundary. SafeGen keeps authentication in a separately controlled owner environment.
 
 ## How agent access works
 
@@ -66,4 +83,10 @@ The response policy also uses `no-transform` to prevent Cloudflare's automatic W
 
 The generator core has no runtime dependencies. The broker reuses Node built-ins and the existing MCP SDK, Commander, Inquirer and Zod. Contributions that change secret handling need regression tests and a clear statement of the affected trust boundary.
 
-MIT. Built by [Poorvith M P](https://poorvithmp.com). The EFF wordlist has its own attribution in the core package.
+## About the builder
+
+Built by [Poorvith M P](https://www.poorvithmp.com), a tools architect in Hassan, Karnataka, working on agent systems and local-first utilities. I build around the friction people learn to tolerate, with useful behavior and visible engineering tradeoffs.
+
+[GitHub](https://github.com/poorvith-mp) · [Contact](mailto:contact@poorvithmp.com) · [Feature scope and next work](features.md)
+
+MIT. The EFF wordlist has its own attribution in the core package. Supported client marks belong to their respective owners; see [asset attribution](docs/assets/ATTRIBUTION.md).

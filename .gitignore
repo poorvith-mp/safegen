@@ -29,3 +29,8 @@ dist-ssr
 *.env
 .env.local
 .env*.local
+
+# Local development tooling and private implementation notes
+.agents/
+docs/superpowers/
+.wrangler/

@@ -1,6 +1,7 @@
 const CACHE_PREFIX = 'safegen-app-';
-const CACHE_NAME = `${CACHE_PREFIX}v3-1`;
-const APP_SHELL = ['/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/logo-mark.svg'];
+const CACHE_NAME = `${CACHE_PREFIX}v3-2`;
+const APP_SHELL = ['/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/logo-mark.svg', '/poorvith-mark.svg', '/clients/codex.png', '/clients/claude.png', '/clients/cursor.svg'];
+const PAGES = new Set(['/', '/index.html', '/generator', '/generator/history', '/generator/estimate', '/setup', '/docs', '/about']);
 const STATIC_ASSET = /^\/assets\/[^/]+\.(?:css|js|svg|png|webp|woff2?)$/;
 
 async function installAppShell() {
@@ -34,7 +35,7 @@ self.addEventListener('activate', (event) => {
 async function loadPage(request) {
   try {
     const response = await fetch(request, { cache: 'no-store' });
-    if (response.ok) {
+    if (response.ok && !response.redirected) {
       const cache = await caches.open(CACHE_NAME);
       await cache.put('/index.html', response.clone());
     }
@@ -60,7 +61,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (request.mode === 'navigate' && (url.pathname === '/' || url.pathname === '/index.html')) {
+  if (request.mode === 'navigate' && PAGES.has(url.pathname.replace(/\/$/, '') || '/')) {
     event.respondWith(loadPage(request));
     return;
   }

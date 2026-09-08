@@ -1,10 +1,5 @@
-export type ViewType = 'generator' | 'vault' | 'audit' | 'docs';
-
-export type ThemeMode = 'light' | 'dark';
-
-export type AccentColor = 'indigo' | 'emerald' | 'rose' | 'amber';
-
-export type GeneratorMode = 'random' | 'passphrase' | 'pin' | 'pattern';
+import type { GeneratorMode, StrengthRating } from '@poorvithmp/safegen';
+export type { GeneratorMode, StrengthRating, SecurityAudit } from '@poorvithmp/safegen';
 
 export interface PasswordOptions {
   mode: GeneratorMode;
@@ -25,20 +20,6 @@ export interface PasswordOptions {
   pattern: string; // e.g. 'Lnnn-Lnnn-S' where L=letter, n=number, S=symbol
 }
 
-export type StrengthRating = 'Weak' | 'Medium' | 'Strong' | 'Very strong';
-
-export interface SecurityAudit {
-  entropy: number;
-  rating: StrengthRating;
-  timeToCrackSeconds: number;
-  crackTimeFormatted: string;
-  crackTime: string;
-  poolSize: number;
-  score: number; // 0-100
-  warnings: string[];
-  tips: string[];
-}
-
 export interface HistoryItem {
   id: string;
   password: string;
@@ -47,15 +28,6 @@ export interface HistoryItem {
   rating: StrengthRating;
   entropy: number;
   isFavorite: boolean;
-}
-
-export interface Preferences {
-  theme: ThemeMode;
-  accent: AccentColor;
-  radius: number;
-  motion: number;
-  autoCopy: boolean;
-  maskVault: boolean;
 }
 
 export interface ToastMessage {

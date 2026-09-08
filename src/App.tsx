@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MouseEvent } from 'react';
 import { BentoGrid } from './components/BentoGrid';
 import { GeneratorControls } from './components/GeneratorControls';
 import { DocumentationHub } from './components/DocumentationHub';
+import { AgentSetup } from './components/AgentSetup';
+import { LandingPage } from './components/LandingPage';
+import { AboutPage } from './components/AboutPage';
+import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HistoryVault } from './components/HistoryVault';
 import { PasswordDisplay } from './components/PasswordDisplay';
 import { StrengthAuditor } from './components/StrengthAuditor';
 import { useHistory } from './context/HistoryContext';
 import { useToast } from './context/ToastContext';
-import type { PasswordOptions, ViewType } from './types';
+import type { PasswordOptions } from './types';
 import { calculateDetailedAudit, generatePassword } from './utils/generator';
-import { animateViewTransition } from './utils/gsapUtils';
 import { randomInt } from './utils/generator';
 import { copyText } from './utils/clipboard';
 
@@ -29,15 +33,69 @@ const DEFAULT_OPTIONS: PasswordOptions = {
   pattern: 'Lnnn-Lnnn-S'
 };
 
+const ROUTES: Record<string, string> = {
+  '/': 'Local credentials and approved agent actions', '/generator': 'Password generator',
+  '/generator/history': 'Copied history', '/generator/estimate': 'Strength estimate',
+  '/setup': 'Agent setup', '/docs': 'Documentation', '/about': 'About',
+};
+const currentUrl = () => window.location.pathname + window.location.search + window.location.hash;
+
 export function App() {
   const { showToast } = useToast();
   const { addHistoryItem } = useHistory();
 
-  const [currentView, setCurrentView] = useState<ViewType>('generator');
+  const [url, setUrl] = useState(currentUrl);
+  const currentPath = new URL(url, window.location.origin).pathname.replace(/\/$/, '') || '/';
   const [options, setOptions] = useState<PasswordOptions>(DEFAULT_OPTIONS);
   const [password, setPassword] = useState<string>('');
 
-  const viewContainerRef = useRef<HTMLDivElement>(null);
+  const viewContainerRef = useRef<HTMLElement>(null);
+  const navigationFocus = useRef(false);
+
+  useEffect(() => {
+    const update = () => { navigationFocus.current = true; setUrl(currentUrl()); };
+    window.addEventListener('popstate', update);
+    window.addEventListener('hashchange', update);
+    return () => { window.removeEventListener('popstate', update); window.removeEventListener('hashchange', update); };
+  }, []);
+
+  useEffect(() => {
+    document.title = `${ROUTES[currentPath] ?? 'Page not found'} · SafeGen`;
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (canonical) canonical.href = `https://safegen.poorvithmp.com${ROUTES[currentPath] ? currentPath : '/'}`;
+    const frame = requestAnimationFrame(() => {
+      let target: HTMLElement | null = null;
+      try { target = document.getElementById(decodeURIComponent(window.location.hash.slice(1))); } catch { /* Malformed fragments have no target. */ }
+      if (target) target.scrollIntoView();
+      else if (navigationFocus.current) window.scrollTo(0, 0);
+      if (navigationFocus.current) {
+        const focusTarget = target ?? viewContainerRef.current;
+        focusTarget?.setAttribute('tabindex', '-1');
+        focusTarget?.focus({ preventScroll: true });
+      }
+      navigationFocus.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [url, currentPath]);
+
+  const handleLink = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+    if (!(anchor instanceof HTMLAnchorElement) || anchor.hasAttribute('download') || (anchor.target && anchor.target !== '_self')) return;
+    const destination = new URL(anchor.href);
+    const path = destination.pathname.replace(/\/$/, '') || '/';
+    if (destination.origin !== window.location.origin || !ROUTES[path]) return;
+    const next = destination.pathname + destination.search + destination.hash;
+    event.preventDefault();
+    if (next === currentUrl()) {
+      if (destination.hash) document.getElementById(destination.hash.slice(1))?.scrollIntoView();
+      else window.scrollTo(0, 0);
+      return;
+    }
+    window.history.pushState(null, '', next);
+    navigationFocus.current = true;
+    setUrl(next);
+  };
 
   // Generate password on options change or trigger
   const handleGenerate = useCallback(() => {
@@ -52,13 +110,6 @@ export function App() {
   const audit = useMemo(() => {
     return calculateDetailedAudit(password, options);
   }, [password, options]);
-
-  const handleNavigate = (view: ViewType) => {
-    setCurrentView(view);
-    if (viewContainerRef.current) {
-      animateViewTransition(viewContainerRef.current);
-    }
-  };
 
   const handleSurprise = () => {
     const lengths = [12, 16, 20, 24];
@@ -81,7 +132,7 @@ export function App() {
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (currentView !== 'generator') return;
+      if (currentPath !== '/generator') return;
       const target = e.target instanceof HTMLElement ? e.target : null;
       if (target?.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c' && window.getSelection()?.toString()) return;
@@ -111,16 +162,23 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleGenerate, password, options, audit, addHistoryItem, showToast, currentView]);
+  }, [handleGenerate, password, options, audit, addHistoryItem, showToast, currentPath]);
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--text-main)] selection:text-[var(--surface)]">
+    <div onClick={handleLink} className="app-shell bg-[var(--canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--text-main)] selection:text-[var(--surface)]">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       {/* Header Bar */}
-      <Header currentView={currentView} onNavigate={handleNavigate} />
+      <Header currentPath={currentPath} />
 
       {/* Main Content Area */}
-      <main ref={viewContainerRef} className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-8 pb-32">
-        {currentView === 'generator' && (
+      <main id="main-content" ref={viewContainerRef} tabIndex={-1} className="site-main">
+        {currentPath === '/' && <LandingPage />}
+        {currentPath === '/about' && <AboutPage />}
+        {currentPath === '/setup' && <AgentSetup />}
+        {currentPath.startsWith('/generator') && <nav className="generator-nav" aria-label="Generator tools">{[
+          { href: '/generator', label: 'Generate' }, { href: '/generator/history', label: 'Copied history' }, { href: '/generator/estimate', label: 'Strength estimate' },
+        ].map(({ href, label }) => <a key={href} href={href} aria-current={currentPath === href ? 'page' : undefined}>{label}</a>)}</nav>}
+        {currentPath === '/generator' && (
           <>
             {/* Hero Heading */}
             <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
@@ -149,26 +207,26 @@ export function App() {
           </>
         )}
 
-        {currentView === 'vault' && <HistoryVault />}
+        {currentPath === '/generator/history' && <HistoryVault />}
 
-        {currentView === 'docs' && <DocumentationHub />}
+        {currentPath === '/docs' && <DocumentationHub />}
 
-        {currentView === 'audit' && (
+        {currentPath === '/generator/estimate' && (
           <div className="space-y-6">
             <div className="text-center max-w-2xl mx-auto mb-6">
               <h1 className="text-3xl font-serif italic mb-2">Strength estimate</h1>
               <p className="text-xs font-mono text-[var(--text-muted)]">
-                Entropy and crack time are estimates, assuming uniform generation and 100 billion offline guesses per second. Real attacks and password rules vary.
+                For your current generated credential. Entropy and crack time are estimates, assuming uniform generation and 100 billion offline guesses per second. Real attacks and password rules vary.
               </p>
+              <a className="text-link" href="/generator">Change generation options</a>
             </div>
             <StrengthAuditor audit={audit} />
           </div>
         )}
+        {!ROUTES[currentPath] && <section className="not-found"><p className="eyebrow">Page not found</p><h1>This path doesn’t lead to SafeGen.</h1><a className="button-primary" href="/">Return home</a></section>}
       </main>
 
-      <footer className="max-w-6xl w-full mx-auto px-6 py-10 border-t border-[var(--border)] text-xs text-[var(--text-muted)]">
-        Generation stays in this browser. No analytics service receives generated secrets or page activity.
-      </footer>
+      <Footer />
     </div>
   );
 }

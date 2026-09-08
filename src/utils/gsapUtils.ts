@@ -9,21 +9,6 @@ gsap.defaults({
 const reduceMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 /**
- * Animate view entrance transition with subtle fade & slide up
- */
-export function animateViewTransition(target: HTMLElement | null) {
-  if (!target) return;
-  if (reduceMotion()) return;
-  gsap.fromTo(target, { autoAlpha: 0, y: 12 }, {
-    autoAlpha: 1,
-    y: 0,
-    duration: 0.45,
-    ease: 'power2.out',
-    clearProps: 'transform'
-  });
-}
-
-/**
  * Animate entropy strength meter bar with spring physics
  */
 export function animateEntropyGauge(target: HTMLElement | null, targetWidthPercent: number) {
