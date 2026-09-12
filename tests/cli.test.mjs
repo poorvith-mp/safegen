@@ -38,3 +38,10 @@ test('CLI rejects ineffective self-destruct and unsafe broker startup', () => {
   assert.notEqual(startup.status, 0);
   assert.match(startup.stderr, /separate|different|isolat/i);
 });
+
+test('broker connect validates npm provider flags and requires tarball-dir', () => {
+  const missing = run(['broker', 'connect', '--provider', 'npm', '--name', 'pkg', '--package', '@poorvithmp/safegen-cli']);
+  assert.notEqual(missing.status, 0);
+  assert.match(missing.stderr, /tarball-dir/i);
+});
+

@@ -9,8 +9,8 @@ export const requestStateSchema = z.object({
 }).strict();
 const catalogSchema = z.object({ connections: z.array(z.object({
   id: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}$/),
-  provider: z.enum(['github', 'cloudflare']),
-  actions: z.array(z.enum(['github.run-status', 'github.rerun', 'cloudflare.deployments', 'cloudflare.deploy-version'])).max(4),
+  provider: z.enum(['github', 'cloudflare', 'npm']),
+  actions: z.array(z.enum(['github.run-status', 'github.rerun', 'cloudflare.deployments', 'cloudflare.deploy-version', 'npm.view-latest', 'npm.publish-tarball'])).max(4),
 }).strict()).max(50) }).strict();
 
 export class BrokerClient {

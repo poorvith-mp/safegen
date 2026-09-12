@@ -15,6 +15,10 @@ export function registerVault(program: Command): void {
     await store.initialize(first);
     process.stdout.write('Vault initialized in the configured private directory\n');
   });
+  vault.command('kdf').description('Print the key derivation function and parameters').action(async () => {
+    const info = await new VaultStore(vaultPath()).getKdfInfo();
+    process.stdout.write(`${info}\n`);
+  });
   vault.command('save').requiredOption('--service <service>').requiredOption('--username <username>').action(async (flags) => {
     const credential = await password({ message: 'Credential value:', mask: '*' });
     const masterPassword = await master();

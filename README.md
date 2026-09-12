@@ -4,7 +4,7 @@
 
 **Useful agents. Credentials that stay under your control.**
 
-SafeGen lets agents request approved GitHub and Cloudflare actions without receiving the provider credentials used to perform them. It also includes a browser-local password generator and a TypeScript generation library.
+SafeGen lets agents request approved GitHub, Cloudflare, and npm actions without receiving the provider credentials used to perform them. It also includes a browser-local password generator and a TypeScript generation library.
 
 [Website](https://safegen.poorvithmp.com) · [Try the generator](https://safegen.poorvithmp.com/generator) · [Connect your agent](https://safegen.poorvithmp.com/setup) · [Documentation](https://safegen.poorvithmp.com/docs)
 
@@ -23,22 +23,46 @@ The mission is to make credential access an explicit, reviewable action. A promp
 
 ## How agent access works
 
-1. The owner creates an encrypted vault and pins each connection to a GitHub repository or Cloudflare Worker.
+1. The owner creates an encrypted vault and pins each connection to a GitHub repository, Cloudflare Worker, or npm package.
 2. The owner starts the broker in a separate standard OS account and opens its control page in a private login session that the agent cannot inspect or automate.
 3. The agent uses the CLI or MCP client to request a named action. It receives a pending request ID.
-4. The owner approves the exact account, target and parameters locally. Requests expire after two minutes and approvals cannot be reused.
+4. The owner approves the exact account, target and parameters locally (supplying their 2FA OTP for sensitive actions like npm publish). Requests expire after two minutes and approvals cannot be reused.
 5. SafeGen calls the intended provider directly. The agent receives a small, validated status result. It never receives the provider token, master password, control-page link, cookies or raw provider response.
 
 | Integration | Actions | Owner pins | Agent supplies |
 | --- | --- | --- | --- |
 | GitHub | Workflow run status; rerun an existing workflow | Repository | Run ID |
 | Cloudflare | Recent Worker deployments; deploy an existing version to 100% | Account and Worker | Immutable version ID for deployment |
+| npm | View latest published semver; publish approved tarball | Package and allowed tarball directory | Tarball path and version (owner supplies 2FA OTP at approval) |
 
 There is no arbitrary HTTP proxy, command execution or code upload tool. Provider redirects are rejected. Errors returned to agents use fixed messages. Locking revokes pending actions and aborts in-flight requests locally; a provider may still complete an action it has already received.
 
+## Architecture comparison: Action-only vs Token-release
+
+SafeGen operates an **action-only** model, distinct from token-release credential managers.
+
+| Dimension | Token-release brokers (e.g. [1Password Credential Broker](https://developer.1password.com/docs/service-accounts/credential-broker/)) | SafeGen Action Broker |
+| --- | --- | --- |
+| Credential exposure | Releases raw provider tokens/credentials to the requesting client | Zero credential disclosure; credentials never enter the agent context |
+| Blast radius | Agent can use released credentials for any endpoint allowed by token scope | Agent can only trigger the exact approved action against the pinned target |
+| Lifecycle | Token remains in agent memory/environment until revoked or expired | Token stays inside owner process; used once for the approved action and dropped |
+| 2FA / OTP | Requires delegating 2FA secrets or pre-authenticated sessions | Owner supplies 2FA OTP interactively at approval time; OTP is never stored |
+| Residual risks | Process memory dumps, accidental prompt leakage, unapproved API calls | Host root/admin compromise, shared screen automation, malicious provider behavior |
+
+No security architecture offers "zero risk" or "unhackable" operations. SafeGen narrows the exposure surface by keeping provider credentials completely out of agent memory and context.
+
 ## Release status and installation
 
-This repository contains CLI **3.0.0** and core **2.1.0**. The action broker is a breaking change from CLI v2. npm publication is separate; don't use the older published CLI for this security boundary. Build this revision from source in each account's own private installation:
+This repository contains CLI **3.1.0** and core **2.2.0**. The action broker is a breaking change from CLI v2.
+
+Install the CLI globally in **each standard OS account separately** (the owner account and the agent account must each have their own independent installation; never share an installation or home directory between accounts):
+
+```powershell
+npm install -g @poorvithmp/safegen-cli@3.1.0
+safegen --help
+```
+
+To build from source:
 
 ```powershell
 git clone https://github.com/poorvith-mp/safegen.git
@@ -60,9 +84,9 @@ Strength figures describe generation assumptions. They cannot establish the stre
 
 ## Local vault and trust boundary
 
-The vault uses AES-256-GCM, a random 16-byte salt and 12-byte IV, and PBKDF2-HMAC-SHA256 with 600,000 iterations. Initialization never overwrites a vault. Mutations are serialized across processes. Encrypted backup/restore and master-password rotation are available; losing the master password has no recovery path.
+The vault uses AES-256-GCM with Envelope v2 and scrypt ($N=131072, r=8, p=1$, maxmem 256 MiB), with backwards compatibility for Envelope v1 PBKDF2 vaults. Initialization never overwrites a vault. Mutations are serialized across processes. Transparent upgrade from v1 to v2 scrypt occurs on password rotation or save (`vault upgraded to scrypt` notice). Encrypted backup/restore (`safegen vault backup/restore`), KDF inspection (`safegen vault kdf`), and audit trail export (`safegen broker audit`) are available; losing the master password has no recovery path.
 
-The owner broker auto-locks after five minutes. Connection revocation removes the grant from the running broker and its saved configuration; it does not revoke the provider's token remotely. Revoke or rotate that token at GitHub/Cloudflare when needed. Configure minimum provider permissions and an expiration when creating tokens.
+The owner broker auto-locks after five minutes. Connection revocation removes the grant from the running broker and its saved configuration; it does not revoke the provider's token remotely. Revoke or rotate that token at GitHub/Cloudflare/npm when needed. Configure minimum provider permissions and an expiration when creating tokens.
 
 A second process alone isn't an isolation boundary. **The agent must not have access to the owner's OS account, browser session, vault, broker code, runtime, or process memory.** Startup checks reject the same username and inspect basic OS/file permissions; they do not certify the complete machine configuration. Administrator/root access, shared screen/input automation, a compromised broker/runtime, malicious provider behavior, and OS compromise remain outside this model. Approved nonsecret results may reach the model provider.
 

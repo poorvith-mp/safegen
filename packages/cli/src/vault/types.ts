@@ -1,10 +1,20 @@
 export interface VaultEntry { service: string; username: string; credential: string }
 export interface VaultData { entries: VaultEntry[] }
-export interface EncryptedVault {
+
+export interface EncryptedVaultV1 {
   version: 1;
   kdf: { name: 'PBKDF2-HMAC-SHA256'; iterations: number; salt: string };
   cipher: { name: 'AES-256-GCM'; iv: string; tag: string; data: string };
 }
+
+export interface EncryptedVaultV2 {
+  version: 2;
+  kdf: { name: 'scrypt'; N: number; r: number; p: number; salt: string }
+       | { name: 'PBKDF2-HMAC-SHA256'; iterations: number; salt: string };
+  cipher: { name: 'AES-256-GCM'; iv: string; tag: string; data: string };
+}
+
+export type EncryptedVault = EncryptedVaultV1 | EncryptedVaultV2;
 
 export const MAX_VAULT_BYTES = 1_048_576;
 const MAX_ENTRIES = 1_000;
@@ -43,10 +53,41 @@ export function assertVaultData(value: unknown): asserts value is VaultData {
 }
 
 export function assertEncryptedVault(value: unknown): asserts value is EncryptedVault {
-  if (!record(value) || value.version !== 1 || !record(value.kdf) || !record(value.cipher)
-    || value.kdf.name !== 'PBKDF2-HMAC-SHA256' || !Number.isSafeInteger(value.kdf.iterations)
-    || !base64(value.kdf.salt, 16) || value.cipher.name !== 'AES-256-GCM'
-    || !base64(value.cipher.iv, 12) || !base64(value.cipher.tag, 16) || !base64(value.cipher.data)) {
+  if (!record(value) || !record(value.kdf) || !record(value.cipher)) {
     throw new Error('Invalid vault envelope');
   }
+  if (value.cipher.name !== 'AES-256-GCM' || !base64(value.cipher.iv, 12) || !base64(value.cipher.tag, 16) || !base64(value.cipher.data)) {
+    throw new Error('Invalid vault envelope');
+  }
+  if (value.version === 1) {
+    if (value.kdf.name !== 'PBKDF2-HMAC-SHA256' || !Number.isSafeInteger(value.kdf.iterations)
+      || (value.kdf.iterations as number) < 600_000 || (value.kdf.iterations as number) > 5_000_000
+      || !base64(value.kdf.salt, 16)) {
+      throw new Error('Invalid vault envelope');
+    }
+    return;
+  }
+  if (value.version === 2) {
+    if (!base64(value.kdf.salt, 16)) throw new Error('Invalid vault envelope');
+    if (value.kdf.name === 'scrypt') {
+      const { N, r, p } = value.kdf;
+      if (!Number.isSafeInteger(N) || !Number.isSafeInteger(r) || !Number.isSafeInteger(p)) throw new Error('Invalid vault envelope');
+      const nNum = N as number;
+      const rNum = r as number;
+      const pNum = p as number;
+      if (nNum < 16_384 || nNum > 1_048_576 || (nNum & (nNum - 1)) !== 0) throw new Error('Invalid vault envelope');
+      if (rNum < 8 || rNum > 16) throw new Error('Invalid vault envelope');
+      if (pNum < 1 || pNum > 4) throw new Error('Invalid vault envelope');
+      return;
+    }
+    if (value.kdf.name === 'PBKDF2-HMAC-SHA256') {
+      const { iterations } = value.kdf;
+      if (!Number.isSafeInteger(iterations) || (iterations as number) < 600_000 || (iterations as number) > 5_000_000) {
+        throw new Error('Invalid vault envelope');
+      }
+      return;
+    }
+    throw new Error('Invalid vault envelope');
+  }
+  throw new Error('Invalid vault envelope');
 }

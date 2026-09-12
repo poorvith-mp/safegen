@@ -4,6 +4,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import fs from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import { syncBuiltinESMExports } from 'node:module';
 
 const brokerModule = await import('../packages/cli/dist/broker/server.js').catch(() => ({}));
@@ -200,3 +201,154 @@ test('deadline passing during completion logging prevents result release', async
   assert.equal(state.status, 'expired');
   assert.equal(state.result, undefined);
 });
+
+function createTarball(version, packageName = '@poorvithmp/safegen-cli') {
+  const pkgJson = Buffer.from(JSON.stringify({ name: packageName, version }), 'utf8');
+  const header = Buffer.alloc(512);
+  header.write('package/package.json', 0, 100, 'utf8');
+  const sizeOctal = pkgJson.length.toString(8).padStart(11, '0') + ' ';
+  header.write(sizeOctal, 124, 12, 'utf8');
+  const contentPadded = Buffer.alloc(Math.ceil(pkgJson.length / 512) * 512);
+  pkgJson.copy(contentPadded);
+  const endBlocks = Buffer.alloc(1024);
+  return gzipSync(Buffer.concat([header, contentPadded, endBlocks]));
+}
+
+test('npm.view-latest pins package, returns validated semver, strips extra fields and fails closed on error', async () => {
+  assert.equal(typeof actionModule.executeAction, 'function');
+  const connection = { id: 'pkg', provider: 'npm', package: '@poorvithmp/safegen-cli', tarballDir: '/fake/dir' };
+  let calledUrl = '';
+  const transport = async (url) => {
+    calledUrl = String(url);
+    return new Response(JSON.stringify({
+      name: '@poorvithmp/safegen-cli',
+      'dist-tags': { latest: '3.0.0', beta: '3.1.0-beta.0' },
+      versions: { '3.0.0': { foo: 'bar', secret: fixtureSecret } },
+      time: { modified: '2026-09-12' },
+      secret: fixtureSecret,
+    }));
+  };
+  const result = await actionModule.executeAction(connection, { connection: 'pkg', action: 'npm.view-latest' }, fixtureSecret, transport);
+  assert.deepEqual(result, { action: 'npm.view-latest', package: '@poorvithmp/safegen-cli', latest: '3.0.0' });
+  assert.equal(calledUrl, 'https://registry.npmjs.org/@poorvithmp%2Fsafegen-cli');
+  assert.doesNotMatch(JSON.stringify(result), /synthetic|secret|beta|versions/);
+
+  await assert.rejects(
+    () => actionModule.executeAction(connection, { connection: 'pkg', action: 'npm.view-latest' }, fixtureSecret, async () => new Response('redirect', { status: 302, headers: { Location: 'https://evil.test' } })),
+    /Provider action failed/
+  );
+  await assert.rejects(
+    () => actionModule.executeAction(connection, { connection: 'pkg', action: 'npm.view-latest' }, fixtureSecret, async () => new Response('not json', { status: 200 })),
+    /Provider action failed/
+  );
+});
+
+test('npm.publish-tarball enforces tarball-dir boundaries and inner version match', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'safegen-tarball-test-'));
+  const tarballDir = join(dir, 'allowed');
+  fs.mkdirSync(tarballDir);
+  const outsideDir = join(dir, 'outside');
+  fs.mkdirSync(outsideDir);
+
+  const connection = { id: 'pkg', provider: 'npm', package: '@poorvithmp/safegen-cli', tarballDir };
+  const validTarball = join(tarballDir, 'safegen-cli-3.1.0.tgz');
+  fs.writeFileSync(validTarball, createTarball('3.1.0'));
+
+  const mismatchTarball = join(tarballDir, 'safegen-cli-3.0.0.tgz');
+  fs.writeFileSync(mismatchTarball, createTarball('3.0.0'));
+
+  const outsideTarball = join(outsideDir, 'safegen-cli-3.1.0.tgz');
+  fs.writeFileSync(outsideTarball, createTarball('3.1.0'));
+
+  // Path traversal with .. -> tarball not allowed
+  await assert.rejects(
+    () => actionModule.executeAction(connection, { connection: 'pkg', action: 'npm.publish-tarball', tarballPath: join(tarballDir, '../outside/safegen-cli-3.1.0.tgz'), version: '3.1.0' }, fixtureSecret, { otp: '123456' }),
+    /tarball not allowed/
+  );
+
+  // Version mismatch -> version mismatch
+  await assert.rejects(
+    () => actionModule.executeAction(connection, { connection: 'pkg', action: 'npm.publish-tarball', tarballPath: mismatchTarball, version: '3.1.0' }, fixtureSecret, { otp: '123456' }),
+    /version mismatch/
+  );
+
+  // Non-existent tarball -> tarball not allowed
+  await assert.rejects(
+    () => actionModule.executeAction(connection, { connection: 'pkg', action: 'npm.publish-tarball', tarballPath: join(tarballDir, 'nonexistent.tgz'), version: '3.1.0' }, fixtureSecret, { otp: '123456' }),
+    /tarball not allowed/
+  );
+});
+
+test('real broker executes npm publish with OTP without leaking OTP or secrets', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'safegen-npm-broker-'));
+  const tarballDir = join(dir, 'dist');
+  fs.mkdirSync(tarballDir);
+  const tarballPath = join(tarballDir, 'pkg-3.1.0.tgz');
+  fs.writeFileSync(tarballPath, createTarball('3.1.0'));
+
+  const connection = { id: 'npm-pkg', provider: 'npm', package: '@poorvithmp/safegen-cli', tarballDir };
+  let executedCommand = null;
+  const runner = async (cmd, args, opts) => {
+    executedCommand = { cmd, args, opts };
+    return { exitCode: 0 };
+  };
+
+  const broker = await brokerModule.startBroker({
+    connections: [connection],
+    logPath: join(dir, 'activity.jsonl'),
+    brokerAuditPath: join(dir, 'audit.jsonl'),
+    vault: { read: async () => ({ entries: [] }), get: async () => ({ credential: fixtureSecret }) },
+    commandRunner: runner,
+  });
+  t.after(() => broker.close());
+
+  // Agent submits request
+  const submitRes = await fetch(`${broker.url}/v1/requests`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ connection: 'npm-pkg', action: 'npm.publish-tarball', tarballPath, version: '3.1.0' }),
+  });
+  assert.equal(submitRes.status, 202);
+  const req = await submitRes.json();
+  assert.equal(req.status, 'pending');
+
+  // Unlock vault
+  assert.equal((await owner(broker, { operation: 'unlock', password: 'synthetic-master' })).status, 303);
+
+  // Attempt approval without OTP -> HTTP 400
+  const noOtpRes = await owner(broker, { operation: 'approve', requestId: req.requestId });
+  assert.equal(noOtpRes.status, 400);
+
+  // Attempt approval with invalid OTP -> HTTP 400
+  const badOtpRes = await owner(broker, { operation: 'approve', requestId: req.requestId, otp: '123' });
+  assert.equal(badOtpRes.status, 400);
+
+  // Valid approval with 6-digit OTP
+  const approveRes = await owner(broker, { operation: 'approve', requestId: req.requestId, otp: '654321' });
+  assert.equal(approveRes.status, 303);
+
+  // Request completes
+  const resultRes = await fetch(`${broker.url}/v1/requests/${req.requestId}`);
+  assert.equal(resultRes.status, 200);
+  const resultJson = await resultRes.json();
+  assert.equal(resultJson.status, 'completed');
+  assert.deepEqual(resultJson.result, {
+    action: 'npm.publish-tarball',
+    package: '@poorvithmp/safegen-cli',
+    version: '3.1.0',
+    status: 'published',
+  });
+
+  // Verify command execution
+  assert.equal(executedCommand.cmd, 'npm');
+  assert.deepEqual(executedCommand.args, ['publish', tarballPath, '--access', 'public', '--otp', '654321']);
+  assert.equal(executedCommand.opts.env.NODE_AUTH_TOKEN, fixtureSecret);
+
+  // Verify OTP and secrets NEVER appear in result, activity log, or audit log
+  assert.doesNotMatch(JSON.stringify(resultJson), /654321|synthetic/);
+  const activityContent = fs.readFileSync(join(dir, 'activity.jsonl'), 'utf8');
+  assert.doesNotMatch(activityContent, /654321|synthetic/);
+  const auditContent = fs.readFileSync(join(dir, 'audit.jsonl'), 'utf8');
+  assert.doesNotMatch(auditContent, /654321|synthetic/);
+});
+

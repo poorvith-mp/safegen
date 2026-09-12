@@ -1,6 +1,6 @@
 {
   "name": "@poorvithmp/safegen",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Typed, zero-dependency credential generation and auditing for browsers and Node.js.",
   "author": "Poorvith M P",
   "homepage": "https://safegen.poorvithmp.com",
@@ -23,7 +23,8 @@
   "sideEffects": false,
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {
@@ -40,6 +41,6 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   }
 }

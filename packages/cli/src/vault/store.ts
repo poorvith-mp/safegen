@@ -2,7 +2,7 @@ import { link, mkdir, open, rename, rm, stat } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { dirname } from 'node:path';
 import { decryptVault, encryptVault } from './encryption.js';
-import { assertVaultEntry, MAX_VAULT_BYTES, type EncryptedVault, type VaultData, type VaultEntry } from './types.js';
+import { assertEncryptedVault, assertVaultEntry, MAX_VAULT_BYTES, type EncryptedVault, type VaultData, type VaultEntry } from './types.js';
 
 const LOCK_WAIT_MS = 30_000;
 const pause = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -35,10 +35,15 @@ export class VaultStore {
     const entry = { service, username, credential };
     assertVaultEntry(entry);
     await this.withMutationLock(async () => {
-      const data = await this.read(password);
+      const { envelope } = await this.readVaultFile(this.path);
+      const isV1 = envelope.version === 1;
+      const data = decryptVault(envelope, password);
       const index = data.entries.findIndex((item) => item.service === service && item.username === username);
       if (index >= 0) data.entries[index] = entry; else data.entries.push(entry);
       await this.write(data, password);
+      if (isV1) {
+        process.stderr.write('vault upgraded to scrypt\n');
+      }
     });
   }
 
@@ -66,7 +71,26 @@ export class VaultStore {
   }
 
   async rotatePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await this.withMutationLock(async () => this.write(await this.read(currentPassword), newPassword));
+    await this.withMutationLock(async () => {
+      const { envelope } = await this.readVaultFile(this.path);
+      const isV1 = envelope.version === 1;
+      const data = decryptVault(envelope, currentPassword);
+      await this.write(data, newPassword);
+      if (isV1) {
+        process.stderr.write('vault upgraded to scrypt\n');
+      }
+    });
+  }
+
+  async getKdfInfo(): Promise<string> {
+    const { envelope } = await this.readVaultFile(this.path);
+    if (envelope.kdf.name === 'scrypt') {
+      return `scrypt N=${envelope.kdf.N} r=${envelope.kdf.r} p=${envelope.kdf.p}`;
+    }
+    if (envelope.kdf.name === 'PBKDF2-HMAC-SHA256') {
+      return `PBKDF2-HMAC-SHA256 iterations=${envelope.kdf.iterations}`;
+    }
+    return (envelope.kdf as { name: string }).name;
   }
 
   async backup(destination: string, password: string, overwrite = false): Promise<void> {
@@ -99,8 +123,11 @@ export class VaultStore {
       const size = (await handle.stat()).size;
       if (size === 0 || size > MAX_VAULT_BYTES) throw new Error('Vault file size is invalid or too large');
       const contents = await handle.readFile('utf8');
-      try { return { contents, envelope: JSON.parse(contents) as EncryptedVault }; }
-      catch (error) {
+      try {
+        const envelope = JSON.parse(contents) as EncryptedVault;
+        assertEncryptedVault(envelope);
+        return { contents, envelope };
+      } catch (error) {
         if (error instanceof SyntaxError) throw new Error('Invalid vault envelope');
         throw error;
       }

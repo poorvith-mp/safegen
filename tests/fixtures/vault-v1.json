@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "kdf": {
+    "name": "PBKDF2-HMAC-SHA256",
+    "iterations": 600000,
+    "salt": "ASNFZ4mrze8BI0VniavN7w=="
+  },
+  "cipher": {
+    "name": "AES-256-GCM",
+    "iv": "ASNFZ4mrze8BI0Vn",
+    "tag": "DC5rEibBk3leH98z8LN3fg==",
+    "data": "vfTovV3z1qbIphY0ejZyPwMIJXVZBv/vXu17XSa1M0/VIsD3g7y7R1WH3JbwYdNNMJPhlLWHG+ndAfVwRS+xsNPjIfjjMZh+LilajOF1YMQo/GPQ6Aaytxtm52TbeUVXg6Ue"
+  }
+}

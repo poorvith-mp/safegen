@@ -17,14 +17,92 @@ import { VaultStore } from '../packages/cli/dist/vault/store.js';
 const execFileAsync = promisify(execFile);
 
 test('vault encryption is authenticated, salted, and uses the required work factor', () => {
+  const start = Date.now();
   const encrypted = encryptVault({ entries: [{ service: 'github.com', username: 'poorvith', credential: 'secret-value' }] }, 'master-password');
-  assert.equal(encrypted.kdf.iterations, 600_000);
+  const elapsed = Date.now() - start;
+  assert.ok(elapsed < 2000, `Derivation should take under 2s (took ${elapsed}ms)`);
+  assert.equal(encrypted.version, 2);
+  assert.equal(encrypted.kdf.name, 'scrypt');
+  assert.equal(encrypted.kdf.N, 131072);
+  assert.equal(encrypted.kdf.r, 8);
+  assert.equal(encrypted.kdf.p, 1);
   assert.equal(PBKDF2_ITERATIONS, 600_000);
   assert.doesNotMatch(JSON.stringify(encrypted), /secret-value/);
   assert.deepEqual(decryptVault(encrypted, 'master-password').entries[0], {
     service: 'github.com', username: 'poorvith', credential: 'secret-value',
   });
   assert.throws(() => decryptVault(encrypted, 'wrong-password'), /master password|decrypt/i);
+});
+
+test('v1 fixture decrypts with test-password and upgrades to scrypt on save', async () => {
+  const fixturePath = new URL('./fixtures/vault-v1.json', import.meta.url);
+  const fixtureContent = await readFile(fixturePath, 'utf8');
+  const v1Envelope = JSON.parse(fixtureContent);
+  assert.equal(v1Envelope.version, 1);
+  const data = decryptVault(v1Envelope, 'test-password');
+  assert.equal(data.entries[0].service, 'github.com');
+  assert.equal(data.entries[0].username, 'fixture-user');
+  assert.equal(data.entries[0].credential, 'fixture-token-value');
+
+  const directory = await mkdtemp(join(tmpdir(), 'safegen-vault-upgrade-'));
+  const vaultPath = join(directory, 'vault.enc');
+  await writeFile(vaultPath, fixtureContent);
+  const store = new VaultStore(vaultPath);
+
+  let stderrOutput = '';
+  const originalStderrWrite = process.stderr.write;
+  process.stderr.write = (chunk) => {
+    stderrOutput += String(chunk);
+    return true;
+  };
+  try {
+    await store.save('github.com', 'fixture-user', 'new-token', 'test-password');
+  } finally {
+    process.stderr.write = originalStderrWrite;
+  }
+  assert.match(stderrOutput, /vault upgraded to scrypt/);
+
+  const upgraded = JSON.parse(await readFile(vaultPath, 'utf8'));
+  assert.equal(upgraded.version, 2);
+  assert.equal(upgraded.kdf.name, 'scrypt');
+  assert.equal((await store.get('github.com', 'fixture-user', 'test-password')).credential, 'new-token');
+});
+
+test('v2 envelope with PBKDF2-HMAC-SHA256 decrypts (forward-compat path)', async () => {
+  const fixturePath = new URL('./fixtures/vault-v1.json', import.meta.url);
+  const v1Fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
+  const v2Pbkdf2 = {
+    version: 2,
+    kdf: {
+      name: 'PBKDF2-HMAC-SHA256',
+      iterations: v1Fixture.kdf.iterations,
+      salt: v1Fixture.kdf.salt,
+    },
+    cipher: v1Fixture.cipher,
+  };
+  const data = decryptVault(v2Pbkdf2, 'test-password');
+  assert.equal(data.entries[0].service, 'github.com');
+});
+
+test('parameter bounds reject invalid KDF parameters before derivation', () => {
+  const valid = encryptVault({ entries: [] }, 'master-password');
+  const invalidCases = [
+    { ...valid, kdf: { ...valid.kdf, N: 2 ** 21 } },
+    { ...valid, kdf: { ...valid.kdf, N: 100000 } },
+    { ...valid, kdf: { ...valid.kdf, r: 4 } },
+    { ...valid, kdf: { ...valid.kdf, p: 8 } },
+    { ...valid, kdf: { name: 'PBKDF2-HMAC-SHA256', iterations: 1000, salt: valid.kdf.salt } },
+    { ...valid, kdf: { name: 'unsupported-kdf', salt: valid.kdf.salt } },
+  ];
+  for (const envelope of invalidCases) {
+    const start = Date.now();
+    assert.throws(
+      () => decryptVault(envelope, 'master-password'),
+      /Invalid vault envelope|vault format/i,
+    );
+    const duration = Date.now() - start;
+    assert.ok(duration < 20, `Parameter bounds check should fail before derivation (<20ms, took ${duration}ms)`);
+  }
 });
 test('vault store supports save, lookup, list, and delete without plaintext at rest', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'safegen-vault-'));
@@ -120,7 +198,7 @@ test('Windows transient lock sharing errors retry without deleting another lock'
 test('vault rejects malformed envelopes, malformed entries, and oversized files', async () => {
   const encrypted = encryptVault({ entries: [] }, 'master-password');
   assert.throws(
-    () => decryptVault({ ...encrypted, kdf: { ...encrypted.kdf, name: 'scrypt' } }, 'master-password'),
+    () => decryptVault({ ...encrypted, kdf: { ...encrypted.kdf, name: 'unknown-kdf' } }, 'master-password'),
     /vault format|envelope/i,
   );
   assert.throws(
@@ -174,4 +252,30 @@ test('vault get directs users to the local action broker without requesting a se
     program.parseAsync(['node', 'safegen', 'vault', 'get']),
     /local action broker/i,
   );
+});
+
+test('vault kdf prints the kdf name and parameters and refuses under agent user', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'safegen-vault-kdf-'));
+  const vaultPath = join(directory, 'vault.enc');
+  const store = new VaultStore(vaultPath);
+  await store.initialize('master-password');
+
+  let stdout = '';
+  const originalStdoutWrite = process.stdout.write;
+  process.stdout.write = (chunk) => {
+    stdout += String(chunk);
+    return true;
+  };
+  const originalVaultHome = process.env.SAFEGEN_HOME;
+  process.env.SAFEGEN_HOME = directory;
+  try {
+    const program = new Command().exitOverride();
+    registerVault(program);
+    await program.parseAsync(['node', 'safegen', 'vault', 'kdf']);
+  } finally {
+    process.stdout.write = originalStdoutWrite;
+    if (originalVaultHome) process.env.SAFEGEN_HOME = originalVaultHome;
+    else delete process.env.SAFEGEN_HOME;
+  }
+  assert.equal(stdout.trim(), 'scrypt N=131072 r=8 p=1');
 });

@@ -1,9 +1,13 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { appendFile, mkdir } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { VaultStore } from '../vault/store.js';
-import { actionSchema, connectionSchema, executeAction, validateAction, type Action, type ActionResult, type Connection, type Transport } from './actions.js';
+import { actionSchema, connectionSchema, executeAction, validateAction, type Action, type ActionResult, type CommandRunner, type Connection, type Transport } from './actions.js';
+import { appendAuditEvent, sanitizeActionParams, type AuditEventName } from './audit.js';
+import { brokerAuditPath } from '../paths.js';
+import { validateTarballPath } from './tarball.js';
 
 type RequestStatus = 'pending' | 'executing' | 'completed' | 'failed' | 'denied' | 'expired' | 'revoked';
 interface ActionRequest {
@@ -19,15 +23,21 @@ interface BrokerOptions {
   connections: Connection[];
   vault: Pick<VaultStore, 'read' | 'get'>;
   logPath: string;
+  brokerAuditPath?: string;
+  agentUser?: string;
   port?: number;
   transport?: Transport;
+  commandRunner?: CommandRunner;
   requestTtlMs?: number;
   sessionTtlMs?: number;
   revokeConnection?: (id: string) => Promise<void>;
 }
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
-const actionsFor = (provider: string) => provider === 'github' ? ['github.run-status', 'github.rerun'] : ['cloudflare.deployments', 'cloudflare.deploy-version'];
+const actionsFor = (provider: string) =>
+  provider === 'github' ? ['github.run-status', 'github.rerun']
+  : provider === 'cloudflare' ? ['cloudflare.deployments', 'cloudflare.deploy-version']
+  : ['npm.view-latest', 'npm.publish-tarball'];
 
 async function readBody(request: IncomingMessage): Promise<string> {
   let size = 0;
@@ -49,6 +59,7 @@ export async function startBroker(options: BrokerOptions) {
   const csrf = randomBytes(32).toString('base64url');
   const ttl = Math.max(10, Math.min(options.requestTtlMs ?? 120_000, 120_000));
   const sessionTtl = Math.max(10, Math.min(options.sessionTtlMs ?? 300_000, 300_000));
+  const auditPath = options.brokerAuditPath ?? brokerAuditPath();
   let masterPassword: string | undefined;
   let unlockedUntil = 0;
   let url = '';
@@ -65,6 +76,28 @@ export async function startBroker(options: BrokerOptions) {
     activity.unshift(line);
     activity.splice(50);
   };
+  const recordAudit = async (
+    event: AuditEventName,
+    entry?: ActionRequest,
+    extra?: { outcome?: 'ok' | 'error' },
+  ) => {
+    try {
+      await appendAuditEvent(auditPath, {
+        ts: new Date().toISOString(),
+        event,
+        ...(entry ? {
+          requestId: entry.requestId,
+          connection: entry.action.connection,
+          action: entry.action.action,
+          params: sanitizeActionParams(entry.action as unknown as Record<string, unknown>),
+        } : {}),
+        ...(extra?.outcome ? { outcome: extra.outcome } : {}),
+        ...(options.agentUser ? { agentUser: options.agentUser } : {}),
+      });
+    } catch {
+      // audit logging must never leak sensitive details
+    }
+  };
   const revoke = (entry: ActionRequest, status: 'expired' | 'revoked') => {
     entry.abort.abort();
     entry.status = status;
@@ -77,6 +110,7 @@ export async function startBroker(options: BrokerOptions) {
     for (const entry of requests.values()) {
       if (entry.status === 'pending' || entry.status === 'executing') revoke(entry, 'revoked');
     }
+    void recordAudit('lock').catch(() => {});
   };
   const expire = () => {
     if (masterPassword && Date.now() >= unlockedUntil) lock();
@@ -85,6 +119,7 @@ export async function startBroker(options: BrokerOptions) {
         if (entry.status === 'pending' || entry.status === 'executing') {
           revoke(entry, 'expired');
           void record('expired', entry).catch(() => lock());
+          void recordAudit('expire', entry).catch(() => {});
         } else if (Date.now() >= entry.expiresAt + 120_000) requests.delete(entry.requestId);
       }
     }
@@ -105,8 +140,24 @@ export async function startBroker(options: BrokerOptions) {
     if (path === controlPath) {
       if (request.method === 'GET') {
         const entries = [...requests.values()].reverse().map(entry => {
-          const target = entry.connection.provider === 'github' ? entry.connection.repository : `${entry.connection.accountId}/${entry.connection.worker}`;
-          return `<article><strong>${escapeHtml(entry.action.action)} · ${entry.status}</strong><pre>${escapeHtml(JSON.stringify({ account: entry.connection.id, target, ...entry.action }, null, 2))}</pre><p>Expires ${escapeHtml(new Date(entry.expiresAt).toISOString())}</p>${entry.status === 'pending' ? form('approve', `<input type="hidden" name="requestId" value="${entry.requestId}"><button ${masterPassword ? '' : 'disabled'}>Approve this exact action</button>`) + form('deny', `<input type="hidden" name="requestId" value="${entry.requestId}"><button>Deny</button>`) : ''}</article>`;
+          const target = entry.connection.provider === 'github' ? entry.connection.repository
+            : entry.connection.provider === 'cloudflare' ? `${entry.connection.accountId}/${entry.connection.worker}`
+            : entry.connection.package;
+          let details = '';
+          let approveExtra = '';
+          if (entry.connection.provider === 'npm' && entry.action.action === 'npm.publish-tarball') {
+            try {
+              const resolved = validateTarballPath(entry.connection.tarballDir, entry.action.tarballPath);
+              const content = readFileSync(resolved);
+              const sha256 = createHash('sha256').update(content).digest('hex');
+              const size = content.length;
+              details = `<p>Tarball sha256: <code>${escapeHtml(sha256)}</code> · Size: ${size} bytes · Package: ${escapeHtml(entry.connection.package)} · Version: ${escapeHtml(entry.action.version)}</p>`;
+            } catch {
+              details = `<p style="color:red">Tarball path invalid or outside tarball-dir</p>`;
+            }
+            approveExtra = `<label style="display:block;margin:6px 0">NPM 2FA OTP: <input type="text" name="otp" pattern="[0-9]{6}" required maxlength="6" autocomplete="off" placeholder="123456" style="width:120px"></label>`;
+          }
+          return `<article><strong>${escapeHtml(entry.action.action)} · ${entry.status}</strong><pre>${escapeHtml(JSON.stringify({ account: entry.connection.id, target, ...entry.action }, null, 2))}</pre>${details}<p>Expires ${escapeHtml(new Date(entry.expiresAt).toISOString())}</p>${entry.status === 'pending' ? form('approve', `<input type="hidden" name="requestId" value="${entry.requestId}">${approveExtra}<button ${masterPassword ? '' : 'disabled'}>Approve this exact action</button>`) + form('deny', `<input type="hidden" name="requestId" value="${entry.requestId}"><button>Deny</button>`) : ''}</article>`;
         }).join('');
         const configured = [...connections.values()].map(connection => `<li>${escapeHtml(connection.id)} (${connection.provider})${form('revoke', `<input type="hidden" name="connection" value="${escapeHtml(connection.id)}"><button>Revoke this connection</button>`)}</li>`).join('');
         response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>SafeGen owner controls</title><style>body{max-width:850px;margin:40px auto;padding:0 20px;background:#f6f5f0;color:#151815;font:16px system-ui}h1{font-size:32px}article{border:1px solid #bbb;border-radius:12px;margin:16px 0;padding:20px;background:white}button,input{padding:12px;margin:5px 5px 5px 0;font:inherit}button{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere}form{display:inline-block}input[type=password]{display:block}a{color:#14623e}</style></head><body><h1>SafeGen owner controls</h1><p>This page belongs in your private owner browser. Keep it outside agent browser automation. Credentials are sent only to the configured provider.</p><p><strong>${masterPassword ? 'Unlocked — auto-locks after five minutes or your configured shorter limit.' : 'Locked'}</strong> <a href="${controlPath}">Refresh requests</a></p>${masterPassword ? form('lock', '<button>Lock and revoke pending actions</button>') : form('unlock', '<label>Master password<input name="password" type="password" autocomplete="off" required maxlength="4096"></label><button>Unlock locally</button>')}<p>Actions already sent to a provider may finish after locking; locking prevents new dispatches.</p><h2>Requests</h2>${entries || '<p>No requests. Ask the agent to submit an action, then refresh this page.</p>'}<h2>Connections</h2><ul>${configured}</ul><h2>Recent activity</h2><pre>${escapeHtml(activity.join('\n'))}</pre></body></html>`);
@@ -146,25 +197,45 @@ export async function startBroker(options: BrokerOptions) {
         } else if (operation === 'approve' || operation === 'deny') {
           const entry = requests.get(body.get('requestId') ?? '');
           if (!entry || entry.status !== 'pending' || entry.expiresAt <= Date.now()) { json(response, 409, { error: 'Request is no longer pending' }); return; }
-          if (operation === 'deny') { entry.status = 'denied'; await record('denied', entry); }
-          else {
+          if (operation === 'deny') {
+            entry.status = 'denied';
+            await record('denied', entry);
+            await recordAudit('deny', entry, { outcome: 'ok' });
+          } else {
             if (!masterPassword) { json(response, 409, { error: 'Unlock the vault first' }); return; }
+            let otp: string | undefined;
+            if (entry.action.action === 'npm.publish-tarball') {
+              otp = body.get('otp')?.trim();
+              if (!otp || !/^\d{6}$/.test(otp)) {
+                json(response, 400, { error: 'OTP is required for npm publish' });
+                return;
+              }
+            }
             entry.status = 'executing';
             try {
               await record('approved', entry);
+              await recordAudit('approve', entry);
               const credential = await options.vault.get(`safegen:${entry.connection.provider}`, entry.connection.id, masterPassword);
               expire();
               if (entry.abort.signal.aborted || closing || !masterPassword || !connections.has(entry.connection.id)) throw new Error('Request revoked');
-              const result = await executeAction(entry.connection, entry.action, credential.credential, options.transport, entry.abort.signal);
+              await recordAudit('execute', entry);
+              const result = await executeAction(entry.connection, entry.action, credential.credential, {
+                transport: options.transport,
+                signal: entry.abort.signal,
+                commandRunner: options.commandRunner,
+                otp,
+              });
               expire();
               if (!entry.abort.signal.aborted) {
                 await record('completed', entry);
+                await recordAudit('result', entry, { outcome: 'ok' });
                 expire();
                 if (!entry.abort.signal.aborted) { entry.result = result; entry.status = 'completed'; }
               }
             } catch {
               if (!entry.abort.signal.aborted) entry.status = 'failed';
               await record(entry.status, entry);
+              await recordAudit('error', entry, { outcome: 'error' });
             }
           }
         } else { json(response, 400, { error: 'Unknown owner operation' }); return; }
@@ -188,6 +259,7 @@ export async function startBroker(options: BrokerOptions) {
       const entry: ActionRequest = { requestId: randomUUID(), action: Object.freeze(action), connection: Object.freeze({ ...connection }), expiresAt: Date.now() + ttl, status: 'pending', abort: new AbortController() };
       const epoch = lockEpoch;
       await record('requested', entry);
+      await recordAudit('request', entry);
       // Recheck after the log write, since another request may have filled the queue.
       if (requests.size >= 50) { json(response, 429, { error: 'Request queue is full; retry later' }); return; }
       if (closing || lockEpoch !== epoch || connections.get(connection.id) !== connection) { json(response, 409, { error: 'Request revoked before queuing' }); return; }
