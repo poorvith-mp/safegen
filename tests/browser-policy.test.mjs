@@ -184,3 +184,12 @@ test('service worker ignores credentials and cross-origin requests while caching
   await navigationResponse;
   assert.equal(cachedPages.length, 1);
 });
+
+test('landing comparison block and headings are present with factual naming', async () => {
+  const source = await readFile(new URL('../src/components/LandingPage.tsx', import.meta.url), 'utf8');
+  assert.match(source, /Action-only vs token release/i);
+  assert.match(source, /1Password's Credential Broker/);
+  assert.match(source, /developer\.1password\.com/);
+  assert.doesNotMatch(source, /unhackable|zero risk/i);
+});
+
