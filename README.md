@@ -10,6 +10,10 @@ SafeGen lets agents request approved GitHub, Cloudflare, and npm actions without
 
 ![SafeGen landing page showing agent requests, owner approval and provider actions](docs/assets/landing.png)
 
+## Demo
+
+[Watch the two-minute SafeGen walkthrough](docs/assets/safegen-demo.mp4) covering the browser generator, agent setup, action-only MCP tools, and the owner-controlled approval flow.
+
 ## Choose your starting point
 
 | You want to… | Start here |
