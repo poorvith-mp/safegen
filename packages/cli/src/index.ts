@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 import { registerGenerate } from './commands/generate.js';
 import { registerVault } from './commands/vault.js';
 import { startMcpServer } from './mcp/server.js';
 import { registerBroker } from './commands/broker.js';
 
-const program = new Command().name('safegen').description('Local credential generation and approved agent actions without credential disclosure').version('3.0.0');
+const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
+const program = new Command().name('safegen').description('Local credential generation and approved agent actions without credential disclosure').version(version);
 registerGenerate(program);
 registerVault(program);
 registerBroker(program);

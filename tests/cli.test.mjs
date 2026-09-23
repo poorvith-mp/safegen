@@ -1,13 +1,21 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const cli = fileURLToPath(new URL('../packages/cli/dist/index.js', import.meta.url));
+const cliPackage = JSON.parse(readFileSync(fileURLToPath(new URL('../packages/cli/package.json', import.meta.url)), 'utf8'));
 
 function run(args) {
   return spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8' });
 }
+
+test('CLI reports its package version', () => {
+  const result = run(['--version']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), cliPackage.version);
+});
 
 test('CLI generates each credential type', () => {
   const password = run(['generate', 'password', '--length', '20', '--uppercase', '--lowercase', '--numbers', '--symbols']);
