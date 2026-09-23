@@ -26,14 +26,14 @@ test('core package packaging matches hygiene criteria', () => {
 
 test('cli package packaging matches hygiene criteria', () => {
   const pkg = JSON.parse(readFileSync(`${cliDir}/package.json`, 'utf8'));
-  assert.equal(pkg.version, '3.1.0');
+  assert.equal(pkg.version, '3.1.1');
   assert.equal(pkg.engines?.node, '>=22.13.0');
   assert.equal(pkg.dependencies?.['@poorvithmp/safegen'], '2.2.0');
 
   const packOutput = execSync('npm pack --dry-run --json', { cwd: cliDir, encoding: 'utf8' });
   const [tarball] = JSON.parse(packOutput);
   assert.equal(tarball.name, '@poorvithmp/safegen-cli');
-  assert.equal(tarball.version, '3.1.0');
+  assert.equal(tarball.version, '3.1.1');
 
   const files = tarball.files.map(f => f.path);
   for (const file of files) {

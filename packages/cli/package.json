@@ -1,6 +1,6 @@
 {
   "name": "@poorvithmp/safegen-cli",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "SafeGen CLI, encrypted local vault, and owner-approved agent action broker.",
   "author": "Poorvith M P",
   "homepage": "https://safegen.poorvithmp.com",
